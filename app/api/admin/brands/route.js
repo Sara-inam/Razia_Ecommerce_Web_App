@@ -1,43 +1,62 @@
 import { NextResponse } from "next/server";
-import {connectDB} from "@/lib/db";
+import { connectDB } from "@/lib/db";
 import Brand from "@/models/Brand";
+import Collection from "@/models/Collection";
 import cloudinary from "@/lib/cloudinary";
 
-// GET all brands
+// ✅ GET ALL BRANDS
 export async function GET() {
   await connectDB();
-  const brands = await Brand.find().populate("collection");
+
+  const brands = await Brand.find()
+    .populate("collection"); // ✅ lowercase
+
   return NextResponse.json(brands);
 }
 
-// CREATE brand with Cloudinary image
+// ✅ CREATE BRAND
 export async function POST(req) {
   await connectDB();
+
   const formData = await req.formData();
 
   const brand_name = formData.get("brand_name");
   const description = formData.get("description");
-  const collection = formData.get("collection"); // ✅ Collection ObjectId from dropdown
+  const collection = formData.get("collection");
   const file = formData.get("image");
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  let imageUrl = "";
 
-  const uploadResult = await new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream({ folder: "brands" }, (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      })
-      .end(buffer);
-  });
+  // Upload image only if exists
+  if (file && file.size > 0) {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { folder: "brands" },
+          (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
+
+    imageUrl = uploadResult.secure_url;
+  }
 
   const newBrand = await Brand.create({
     brand_name,
     description,
-    collection, // ✅ Save foreign key
-    image: uploadResult.secure_url,
+    collection, // foreign key
+    image: imageUrl,
   });
 
-  return NextResponse.json(newBrand, { status: 201 });
+  // populate before sending to frontend
+  const populatedBrand = await Brand.findById(newBrand._id)
+    .populate("collection");
+
+  return NextResponse.json(populatedBrand, { status: 201 });
 }

@@ -1,35 +1,44 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Brand from "@/models/Brand";
+import Collection from "@/models/Collection";
 import cloudinary from "@/lib/cloudinary";
 
-// GET single brand
-export async function GET(req, context) {
+// ✅ GET SINGLE BRAND
+export async function GET(req, { params }) {
   await connectDB();
-  const { id } = await context.params;
+  const { id } = params;
 
-  // Populate collection to show collection_name
-  const brands = await Brand.find().populate("collection");
-  if (!brand) return NextResponse.json({ message: "Brand not found" }, { status: 404 });
+  const brand = await Brand.findById(id).populate("collection");
+
+  if (!brand)
+    return NextResponse.json(
+      { message: "Brand not found" },
+      { status: 404 }
+    );
 
   return NextResponse.json(brand);
 }
 
-// UPDATE brand
+// ✅ UPDATE BRAND
 export async function PUT(req, context) {
   await connectDB();
-  const { id } = await context.params;
+
+  const { id } = await context.params; // ✅ FIX
 
   const formData = await req.formData();
   const brand_name = formData.get("brand_name");
   const description = formData.get("description");
-  const collection = formData.get("collection"); // ✅ Collection ObjectId
+  const collection = formData.get("collection");
   const file = formData.get("image");
 
-  let updatedData = { brand_name, description, collection }; // Add collection here
+  let updatedData = {
+    brand_name,
+    description,
+    collection,
+  };
 
   if (file && file.size > 0) {
-    // Convert File to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
     const mimeType = file.type;
@@ -43,24 +52,42 @@ export async function PUT(req, context) {
     updatedData.image = uploadResult.secure_url;
   }
 
-  const updatedBrand = await Brand.findByIdAndUpdate(id, updatedData, {
-    returnDocument: "after",
-  }).populate("collection"); // ✅ Populate collection for frontend
+  const updatedBrand = await Brand.findByIdAndUpdate(
+    id,
+    updatedData,
+    { returnDocument: "after" }
+  );
 
-  if (!updatedBrand)
-    return NextResponse.json({ message: "Brand not found" }, { status: 404 });
+  if (!updatedBrand) {
+    return NextResponse.json(
+      { message: "Brand not found" },
+      { status: 404 }
+    );
+  }
 
-  return NextResponse.json(updatedBrand);
+  const populatedBrand = await Brand.findById(id)
+    .populate("collection");
+
+  return NextResponse.json(populatedBrand);
 }
 
-// DELETE brand
+// ✅ DELETE BRAND
 export async function DELETE(req, context) {
   await connectDB();
+
+  // Unwrap async params
   const { id } = await context.params;
 
   const deleted = await Brand.findByIdAndDelete(id);
-  if (!deleted)
-    return NextResponse.json({ message: "Brand not found" }, { status: 404 });
 
-  return NextResponse.json({ message: "Brand deleted successfully" });
+  if (!deleted) {
+    return NextResponse.json(
+      { message: "Brand not found" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({
+    message: "Brand deleted successfully",
+  });
 }
