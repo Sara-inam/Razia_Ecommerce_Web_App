@@ -1,86 +1,43 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import {connectDB} from "@/lib/db";
 import Collection from "@/models/Collection";
-import { requireAdmin } from "@/lib/requireAdmin";
 
-// GET single collection
-export async function GET(req, { params }) {
+export async function PUT(req, context) {
   await connectDB();
 
-  const collection = await Collection.findById(params.id);
-
-  if (!collection) {
-    return NextResponse.json(
-      { message: "Collection not found" },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json(collection);
-}
-
-
-// UPDATE collection
-export async function PATCH(req, { params }) {
-  await connectDB();
-
-  const admin = requireAdmin(req);
-  if (admin instanceof NextResponse) return admin;
+  const { id } = await context.params;   // ✅ IMPORTANT
 
   const body = await req.json();
 
-  // 🔴 check duplicate name
-  if (body.name) {
-    const existing = await Collection.findOne({
-      name: body.name,
-      _id: { $ne: params.id } // ignore current collection
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { message: "Collection name already exists" },
-        { status: 400 }
-      );
-    }
-  }
-
   const updated = await Collection.findByIdAndUpdate(
-    params.id,
+    id,
     body,
-    { new: true, runValidators: true }
+    { new: true }
   );
 
-  if (!updated) {
-    return NextResponse.json(
-      { message: "Collection not found" },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({
-    message: "Collection updated successfully",
-    updated
-  });
+  return NextResponse.json(updated);
 }
 
-
-// DELETE collection
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
   await connectDB();
 
-  const admin = requireAdmin(req);
-  if (admin instanceof NextResponse) return admin;
+  const { id } = await context.params;   // ✅ IMPORTANT
 
-  const deleted = await Collection.findByIdAndDelete(params.id);
+  await Collection.findByIdAndDelete(id);
 
-  if (!deleted) {
-    return NextResponse.json(
-      { message: "Collection not found" },
-      { status: 404 }
-    );
+  return NextResponse.json({ message: "Deleted successfully" });
+}
+
+export async function GET(req, context) {
+  await connectDB();
+
+  const { id } = await context.params;   // ✅ IMPORTANT
+
+  const collection = await Collection.findById(id);
+
+  if (!collection) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({
-    message: "Collection deleted successfully"
-  });
+  return NextResponse.json(collection);
 }

@@ -2,10 +2,9 @@
 import mongoose from "mongoose";
 
 const CollectionSchema = new mongoose.Schema({
-  name: { type: String, required: true },  // e.g., "Eid Collection"
-  slug: { type: String, required: true, unique: true },
-  season: { type: String, enum: ["summer","winter","spring","eid","ramazan"], default:"summer" },
- 
+  collection_name: { type: String, required: true },  // e.g., "Eid Collection"
+  category: {type: String, required: true},
+  sub_category: {type: String, required: true }, 
 }, { timestamps: true });
 
 export default mongoose.models.Collection || mongoose.model("Collection", CollectionSchema);

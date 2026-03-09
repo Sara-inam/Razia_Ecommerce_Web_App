@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import {connectDB} from "@/lib/db";
 import Collection from "@/models/Collection";
-import { requireAdmin } from "@/lib/requireAdmin";
 
-// GET all collections
+// ✅ GET ALL
 export async function GET() {
   await connectDB();
 
@@ -12,21 +11,13 @@ export async function GET() {
   return NextResponse.json(collections);
 }
 
-
-// ADD collection
+// ✅ CREATE
 export async function POST(req) {
   await connectDB();
 
-  const admin = requireAdmin(req);
-  if (admin instanceof NextResponse) return admin;
-
   const body = await req.json();
 
-  const collection = await Collection.create({
-    name: body.name,
-    slug: body.slug,
-    season: body.season
-  });
+  const newCollection = await Collection.create(body);
 
-  return NextResponse.json(collection, { status: 201 });
+  return NextResponse.json(newCollection, { status: 201 });
 }

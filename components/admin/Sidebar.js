@@ -13,8 +13,11 @@ export default function Sidebar() {
 
   const navItems = [
     { name: "Dashboard", icon: <FaHome />, link: "/admin" },
+      { name: "Collections", icon: <FaBox />, link: "/admin/collections" },
+       { name: "Brands", icon: <FaBox />, link: "/admin/brands" },
     { name: "Products", icon: <FaBox />, link: "/admin/products" },
     { name: "Users", icon: <FaUser />, link: "/admin/users" },
+   
     // Add more admin pages here
   ];
 
