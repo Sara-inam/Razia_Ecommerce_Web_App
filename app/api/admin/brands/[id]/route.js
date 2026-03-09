@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
-import {connectDB} from "@/lib/db";
+import { connectDB } from "@/lib/db";
 import Brand from "@/models/Brand";
 import cloudinary from "@/lib/cloudinary";
 
+// GET single brand
 export async function GET(req, context) {
   await connectDB();
-  const { id } = await context.params; // ✅ unwrap Promise
+  const { id } = await context.params;
 
-  const brand = await Brand.findById(id);
+  // Populate collection to show collection_name
+  const brands = await Brand.find().populate("collection");
   if (!brand) return NextResponse.json({ message: "Brand not found" }, { status: 404 });
 
   return NextResponse.json(brand);
 }
 
+// UPDATE brand
 export async function PUT(req, context) {
   await connectDB();
   const { id } = await context.params;
@@ -20,19 +23,19 @@ export async function PUT(req, context) {
   const formData = await req.formData();
   const brand_name = formData.get("brand_name");
   const description = formData.get("description");
-  const file = formData.get("image"); // Web File object
+  const collection = formData.get("collection"); // ✅ Collection ObjectId
+  const file = formData.get("image");
 
-  let updatedData = { brand_name, description };
+  let updatedData = { brand_name, description, collection }; // Add collection here
 
   if (file && file.size > 0) {
-    // Convert File to base64 string
+    // Convert File to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
-    const mimeType = file.type; // e.g. "image/png"
+    const mimeType = file.type;
 
     const dataUri = `data:${mimeType};base64,${base64}`;
 
-    // Upload directly to Cloudinary
     const uploadResult = await cloudinary.uploader.upload(dataUri, {
       folder: "brands",
     });
@@ -42,16 +45,18 @@ export async function PUT(req, context) {
 
   const updatedBrand = await Brand.findByIdAndUpdate(id, updatedData, {
     returnDocument: "after",
-  });
+  }).populate("collection"); // ✅ Populate collection for frontend
 
   if (!updatedBrand)
     return NextResponse.json({ message: "Brand not found" }, { status: 404 });
 
   return NextResponse.json(updatedBrand);
 }
+
+// DELETE brand
 export async function DELETE(req, context) {
   await connectDB();
-  const { id } = await context.params; // ✅ unwrap Promise
+  const { id } = await context.params;
 
   const deleted = await Brand.findByIdAndDelete(id);
   if (!deleted)

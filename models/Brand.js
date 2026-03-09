@@ -18,6 +18,11 @@ const BrandSchema = new mongoose.Schema(
       type: String, // Cloudinary URL
       required: true,
     },
+    collection: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Collection",
+  required: true
+},
   },
   {
     timestamps: true,
