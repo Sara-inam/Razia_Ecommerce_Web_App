@@ -2,13 +2,14 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function Header({ onLoginClick, onSignUpClick }) {
   const { cart } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [productsSubmenuOpen, setProductsSubmenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const queryClient = useQueryClient();
 
   const navItems = ["Home", "About", "Contact", "Products"];
   const productSubmenu = [
@@ -17,46 +18,56 @@ export default function Header({ onLoginClick, onSignUpClick }) {
     { name: "Makeup", link: "/products/makeup" },
   ];
 
-  // ✅ Check login state from backend
-  // useEffect in Header
-useEffect(() => {
-  const fetchLoginState = async () => {
-    try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+  // ✅ TanStack Auth Query (replaces useEffect)
+  const { data } = useQuery({
+    queryKey: ["authUser"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+
+      if (!res.ok) return { loggedIn: false };
+
       const data = await res.json();
 
-      // ✅ If access token expired, try refresh
+      // If not logged in, try refresh
       if (!data.loggedIn) {
-        const refreshRes = await fetch("/api/auth/refresh-token", { credentials: "include" });
-        if (refreshRes.ok) {
-          const newData = await fetch("/api/auth/me", { credentials: "include" }).then(r => r.json());
-          setIsLoggedIn(newData.loggedIn);
-        } else {
-          setIsLoggedIn(false);
-        }
-      } else {
-        setIsLoggedIn(true);
-      }
-    } catch (err) {
-      setIsLoggedIn(false);
-    }
-  };
-  fetchLoginState();
-}, []);
+        const refreshRes = await fetch("/api/auth/refresh-token", {
+          credentials: "include",
+        });
 
-  // Logout handler
-  const handleLogout = async () => {
-    try {
-      const res = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-      const data = await res.json();
-      if (res.ok) {
-        setIsLoggedIn(false);
-        window.location.href = "/"; // redirect to homepage
+        if (refreshRes.ok) {
+          const newRes = await fetch("/api/auth/me", {
+            credentials: "include",
+          });
+          return newRes.json();
+        }
       }
-    } catch (err) {
-      console.error("Logout failed", err);
-    }
-  };
+
+      return data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const isLoggedIn = data?.loggedIn || false;
+
+  // ✅ Logout Mutation
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Logout failed");
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      window.location.href = "/";
+    },
+  });
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 backdrop-blur-xl bg-white/30 shadow-md">
@@ -77,7 +88,6 @@ useEffect(() => {
                 <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-green-700 transition-all group-hover:w-full"></span>
               </Link>
 
-              {/* Desktop Products submenu */}
               {item === "Products" && (
                 <div className="absolute top-full left-0 mt-2 w-44 bg-white shadow-lg rounded-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible
                                 transition-all duration-300 ease-in-out transform -translate-y-2 group-hover:translate-y-0 z-50">
@@ -100,7 +110,7 @@ useEffect(() => {
           {/* Conditional Buttons */}
           {isLoggedIn ? (
             <button
-              onClick={handleLogout}
+              onClick={() => logoutMutation.mutate()}
               className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
             >
               Logout
@@ -145,7 +155,7 @@ useEffect(() => {
 
           {isLoggedIn ? (
             <button
-              onClick={handleLogout}
+              onClick={() => logoutMutation.mutate()}
               className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
             >
               Logout
@@ -168,7 +178,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu remains EXACTLY SAME */}
       {menuOpen && (
         <div className="md:hidden bg-white/90 backdrop-blur-md w-full absolute top-full left-0 shadow-lg">
           <nav className="flex flex-col items-center py-4 space-y-3 text-green-700 font-medium">
@@ -210,11 +220,10 @@ useEffect(() => {
               </div>
             ))}
 
-            {/* Mobile conditional buttons */}
             <div className="flex space-x-2 mt-2">
               {isLoggedIn ? (
                 <button
-                  onClick={() => { handleLogout(); setMenuOpen(false); }}
+                  onClick={() => { logoutMutation.mutate(); setMenuOpen(false); }}
                   className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
                 >
                   Logout

@@ -25,7 +25,7 @@ export async function GET(req) {
 
     const totalPages = Math.ceil(totalUsers / limit);
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       users,
       pagination: {
         totalUsers,
@@ -34,17 +34,6 @@ export async function GET(req) {
         limit,
       },
     });
-
-    // Production-level cache
-    response.headers.set(
-      "Cache-Control",
-      "public, max-age=0, s-maxage=30, stale-while-revalidate=60"
-    );
-
-    // Optional: ETag for browser validation
-    response.headers.set("ETag", `${totalUsers}-${page}`);
-
-    return response;
   } catch (err) {
     console.error(err);
     return NextResponse.json(

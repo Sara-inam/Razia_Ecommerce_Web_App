@@ -1,26 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CollectionTable from "@/components/admin/collections/CollectionsTable";
 import AddCollectionModal from "@/components/admin/collections/AddCollectionModal";
 import DeleteCollectionModal from "@/components/admin/collections/DeleteCollectionModal";
 import EditCollectionModal from "@/components/admin/collections/EditCollectionModal";
+import ModernPagination from "@/components/ModernPagination";
+
+const fetchCollections = async (page) => {
+  const res = await fetch(`/api/admin/collections?page=${page}&limit=10`);
+  const data = await res.json();
+  if (!res.ok && !data.success) throw new Error("Failed to fetch collections");
+  return data;
+};
 
 export default function CollectionsPage() {
-  const [collections, setCollections] = useState([]);
+  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const [editData, setEditData] = useState(null);   // ✅ EDIT STATE
+  const [editData, setEditData] = useState(null);
 
-  const fetchCollections = async () => {
-    const res = await fetch("/api/admin/collections");
-    const data = await res.json();
-    setCollections(data);
-  };
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchCollections();
-  }, []);
+  // ✅ Fetch collections with TanStack Query
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["collections", page],
+    queryFn: () => fetchCollections(page),
+    keepPreviousData: true,
+  });
+
+  // Optional: a helper to refresh current page
+  const refreshCollections = () => queryClient.invalidateQueries({ queryKey: ["collections", page] });
 
   return (
     <div className="p-6">
@@ -28,38 +39,35 @@ export default function CollectionsPage() {
 
       <button
         onClick={() => setShowAdd(true)}
-        className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+        className="bg-green-600 text-white px-4 py-2 rounded mb-4 hover:bg-green-700 transition"
       >
         Add Collection
       </button>
 
-      <CollectionTable
-        collections={collections}
-        setDeleteId={setDeleteId}
-        setEditData={setEditData}   // ✅ PASS THIS
-      />
-
-      {showAdd && (
-        <AddCollectionModal
-          onClose={() => setShowAdd(false)}
-          refresh={fetchCollections}
+      {isLoading ? (
+        <p className="text-center text-gray-500">Loading...</p>
+      ) : isError ? (
+        <p className="text-center text-red-500">{error.message}</p>
+      ) : (
+        <CollectionTable
+          collections={data.data}
+          setDeleteId={setDeleteId}
+          setEditData={setEditData}
         />
       )}
 
-      {deleteId && (
-  <DeleteCollectionModal
-    id={deleteId}
-    onClose={() => setDeleteId(null)}
-    refresh={fetchCollections}
-  />
-)}
+      <ModernPagination page={page} totalPages={data?.pagination?.totalPages || 1} onPageChange={setPage} />
 
-      {editData && (   // ✅ EDIT MODAL
-        <EditCollectionModal
-          data={editData}
-          onClose={() => setEditData(null)}
-          refresh={fetchCollections}
-        />
+      {showAdd && (
+        <AddCollectionModal onClose={() => setShowAdd(false)} refresh={refreshCollections} />
+      )}
+
+      {deleteId && (
+        <DeleteCollectionModal id={deleteId} onClose={() => setDeleteId(null)} refresh={refreshCollections} />
+      )}
+
+      {editData && (
+        <EditCollectionModal data={editData} onClose={() => setEditData(null)} refresh={refreshCollections} />
       )}
     </div>
   );

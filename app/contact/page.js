@@ -1,8 +1,43 @@
 "use client";
-import React from "react";
+
+import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { FaWhatsapp, FaInstagram, FaLinkedin } from "react-icons/fa";
 
 export default function Contact() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  // ✅ TanStack Mutation
+  const mutation = useMutation({
+    mutationFn: async (formData) => {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) throw new Error("Failed to send message");
+
+      return res.json();
+    },
+    onSuccess: () => {
+      alert("Message sent successfully!");
+      setForm({ name: "", email: "", message: "" });
+    },
+    onError: (error) => {
+      alert(error.message);
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate(form);
+  };
+
   return (
     <div className="bg-gradient-to-br from-green-100 via-white to-green-50 px-4 pt-24 pb-16">
 
@@ -24,32 +59,19 @@ export default function Contact() {
             <p><span className="font-semibold">Address:</span> Lahore, Pakistan</p>
           </div>
 
-          {/* Social Icons */}
           <div className="flex gap-4 pt-4 border-t border-white/40">
-            <a
-              href="https://wa.me/923001234567"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/60 p-3 rounded-full text-green-600 hover:scale-110 transition duration-300 shadow-md"
-            >
+            <a href="https://wa.me/923001234567" target="_blank" rel="noopener noreferrer"
+              className="bg-white/60 p-3 rounded-full text-green-600 hover:scale-110 transition duration-300 shadow-md">
               <FaWhatsapp />
             </a>
 
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/60 p-3 rounded-full text-pink-500 hover:scale-110 transition duration-300 shadow-md"
-            >
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
+              className="bg-white/60 p-3 rounded-full text-pink-500 hover:scale-110 transition duration-300 shadow-md">
               <FaInstagram />
             </a>
 
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/60 p-3 rounded-full text-blue-600 hover:scale-110 transition duration-300 shadow-md"
-            >
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
+              className="bg-white/60 p-3 rounded-full text-blue-600 hover:scale-110 transition duration-300 shadow-md">
               <FaLinkedin />
             </a>
           </div>
@@ -57,31 +79,41 @@ export default function Contact() {
 
         {/* Right Side - Form */}
         <div className="animate-slideRight">
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
 
             <input
               type="text"
               placeholder="Full Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full bg-white/70 border border-white/50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              required
             />
 
             <input
               type="email"
               placeholder="Email Address"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full bg-white/70 border border-white/50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              required
             />
 
             <textarea
               placeholder="Your Message"
               rows="4"
+              value={form.message}
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
               className="w-full bg-white/70 border border-white/50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              required
             ></textarea>
 
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-2.5 rounded-xl font-semibold hover:bg-green-700 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+              disabled={mutation.isPending}
+              className="w-full bg-green-600 text-white py-2.5 rounded-xl font-semibold hover:bg-green-700 transition duration-300 hover:-translate-y-1 hover:shadow-lg disabled:opacity-60"
             >
-              Send Message
+              {mutation.isPending ? "Sending..." : "Send Message"}
             </button>
 
           </form>
@@ -89,7 +121,7 @@ export default function Contact() {
 
       </div>
 
-      {/* Animations */}
+      {/* Animations (unchanged) */}
       <style jsx>{`
         @keyframes fadeIn {
           0% { opacity: 0; transform: scale(0.95); }

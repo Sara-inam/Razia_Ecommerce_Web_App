@@ -1,28 +1,43 @@
 import mongoose from "mongoose";
 
-const ProductSchema = new mongoose.Schema({
+const ProductSchema = new mongoose.Schema(
+{
   name: { type: String, required: true },
+  slug: { type: String, unique: true },
   description: String,
-  price: { type: Number, required: true },
-  sku: String,
 
-  // Brand as foreign key
   brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
 
-  // Colors with multiple images and size-specific stock
+  price: { type: Number, required: true },
+  discountPercentage: { type: Number, default: 0 },
+  discountPrice: { type: Number },
+
   colors: [
     {
-      name: { type: String, required: true },
+      name: String,
       hex: String,
       images: [String],
       stock: [
-        { size: String, quantity: Number }
+        {
+          size: String,
+          quantity: Number
+        }
       ]
     }
   ],
 
-  featuredImage: String, 
-  tags: [String],
-}, { timestamps: true });
+  tags: { type: [String], default: [] },
+  isActive: { type: Boolean, default: true },
+  views: { type: Number, default: 0 }
+},
+{ timestamps: true }
+);
+
+// ✅ Always calculate discount price before save
+ProductSchema.pre("save", function () {
+  this.discountPrice = this.discountPercentage
+    ? this.price - (this.price * this.discountPercentage) / 100
+    : this.price;
+});
 
 export default mongoose.models.Product || mongoose.model("Product", ProductSchema);

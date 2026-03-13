@@ -1,46 +1,61 @@
 "use client";
+
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AddUserModal({ isOpen, onClose, onAdd }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("user");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null); // for error or success
+  const [message, setMessage] = useState(null); // success or error
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+  const queryClient = useQueryClient();
 
-    try {
+  // ✅ TanStack mutation for adding user
+  const addUserMutation = useMutation({
+    mutationFn: async ({ name, email, password, role }) => {
       const res = await fetch("/api/admin/users/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role }),
         credentials: "include",
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to add user");
+      return data.user;
+    },
+    onSuccess: (user) => {
+      // Optional: invalidate users query if you have a users list query
+      queryClient.invalidateQueries(["users"]);
+      
+      // Call parent onAdd
+      onAdd?.(user);
 
       // Clear form
       setName(""); setEmail(""); setPassword(""); setRole("user");
 
       // Show success message briefly
       setMessage({ type: "success", text: "User added successfully!" });
-      onAdd(data.user);
 
-      // Auto-close after 1.2s
-      setTimeout(() => { setMessage(null); onClose(); }, 1200);
-
-    } catch (err) {
+      // Auto-close modal after 1.2s
+      setTimeout(() => {
+        setMessage(null);
+        onClose();
+      }, 1200);
+    },
+    onError: (err) => {
       setMessage({ type: "error", text: err.message });
-    } finally { setLoading(false); }
-  };
+    },
+  });
 
   if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setMessage(null);
+    addUserMutation.mutate({ name, email, password, role });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 bg-black/40 backdrop-blur-sm">
@@ -104,10 +119,10 @@ export default function AddUserModal({ isOpen, onClose, onAdd }) {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={addUserMutation.isLoading}
               className="px-6 py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition shadow-md disabled:opacity-50"
             >
-              {loading ? "Adding..." : "Add User"}
+              {addUserMutation.isLoading ? "Adding..." : "Add User"}
             </button>
           </div>
         </form>

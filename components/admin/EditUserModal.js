@@ -1,14 +1,18 @@
 // components/admin/EditUserModal.js
 "use client";
+
 import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function EditUserModal({ isOpen, onClose, user, onUpdate }) {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [role, setRole] = useState(user?.role || "user");
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
+  const queryClient = useQueryClient();
+
+  // Update form values when user changes
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -17,42 +21,60 @@ export default function EditUserModal({ isOpen, onClose, user, onUpdate }) {
     }
   }, [user]);
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setMessage(null);
+  // ✅ TanStack mutation for updating user
+  const editUserMutation = useMutation({
+    mutationFn: async ({ _id, name, email, role }) => {
+      const res = await fetch(`/api/admin/users/update_user/${_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, role }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update user");
+      return data.user;
+    },
+    onMutate: (updatedUser) => {
+      // Optimistic update: call parent to update UI immediately
+      onUpdate?.(updatedUser);
+      setMessage({ type: "success", text: "Updating user..." });
+    },
+    onSuccess: (updatedUser) => {
+      // Invalidate users query so list auto-refreshes
+      queryClient.invalidateQueries(["users"]);
 
-  // Optimistic update
-  onUpdate({ ...user, name, email, role });
+      // Success message
+      setMessage({ type: "success", text: "User updated successfully!" });
 
-  try {
-    const res = await fetch(`/api/admin/users/update_user/${user._id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, role }),
-      credentials: "include",
-    });
+      // Auto-close modal
+      setTimeout(() => {
+        setMessage(null);
+        onClose?.();
+      }, 1200);
+    },
+    onError: (err, variables, context) => {
+      // Rollback optimistic update
+      onUpdate?.(user);
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to update user");
-
-    setMessage({ type: "success", text: "User updated successfully!" });
-  } catch (err) {
-    setMessage({ type: "error", text: err.message });
-    // Rollback if failed
-    onUpdate(user);
-  } finally {
-    setTimeout(() => { setMessage(null); onClose(); }, 1200);
-    setLoading(false);
-  }
-};
+      setMessage({ type: "error", text: err.message });
+    },
+  });
 
   if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setMessage(null);
+
+    editUserMutation.mutate({ _id: user._id, name, email, role });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 animate-slideIn border border-gray-100 transition-transform transform hover:scale-105">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900">Edit User</h2>
+
+        {/* Message / Alert */}
         {message && (
           <div
             className={`mb-5 px-5 py-3 rounded-lg text-sm font-medium shadow-sm ${
@@ -64,12 +86,13 @@ export default function EditUserModal({ isOpen, onClose, user, onUpdate }) {
             {message.text}
           </div>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <input
             type="text"
             placeholder="Full Name"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             required
             className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition"
           />
@@ -77,13 +100,13 @@ export default function EditUserModal({ isOpen, onClose, user, onUpdate }) {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition"
           />
           <select
             value={role}
-            onChange={e => setRole(e.target.value)}
+            onChange={(e) => setRole(e.target.value)}
             className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition bg-white cursor-pointer"
           >
             <option value="user">User</option>
@@ -100,10 +123,10 @@ export default function EditUserModal({ isOpen, onClose, user, onUpdate }) {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={editUserMutation.isLoading}
               className="px-6 py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition shadow-md disabled:opacity-50"
             >
-              {loading ? "Updating..." : "Update User"}
+              {editUserMutation.isLoading ? "Updating..." : "Update User"}
             </button>
           </div>
         </form>

@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import {connectDB} from "@/lib/db";
+import { connectDB } from "@/lib/db";
 import Collection from "@/models/Collection";
+import { requireAdmin } from "@/middleware/admin"; // ✅ import admin middleware
 
 export async function PUT(req, context) {
   await connectDB();
 
-  const { id } = await context.params;   // ✅ IMPORTANT
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
 
+  const { id } = await context.params;   // ✅ IMPORTANT
   const body = await req.json();
 
   const updated = await Collection.findByIdAndUpdate(
@@ -21,6 +25,10 @@ export async function PUT(req, context) {
 export async function DELETE(req, context) {
   await connectDB();
 
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
+
   const { id } = await context.params;   // ✅ IMPORTANT
 
   await Collection.findByIdAndDelete(id);
@@ -30,6 +38,10 @@ export async function DELETE(req, context) {
 
 export async function GET(req, context) {
   await connectDB();
+
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
 
   const { id } = await context.params;   // ✅ IMPORTANT
 

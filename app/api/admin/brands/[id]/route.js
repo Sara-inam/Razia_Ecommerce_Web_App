@@ -3,10 +3,16 @@ import { connectDB } from "@/lib/db";
 import Brand from "@/models/Brand";
 import Collection from "@/models/Collection";
 import cloudinary from "@/lib/cloudinary";
+import { requireAdmin } from "@/middleware/admin"; // ✅ import admin middleware
 
 // ✅ GET SINGLE BRAND
 export async function GET(req, { params }) {
   await connectDB();
+
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
+
   const { id } = params;
 
   const brand = await Brand.findById(id).populate("collection");
@@ -23,6 +29,10 @@ export async function GET(req, { params }) {
 // ✅ UPDATE BRAND
 export async function PUT(req, context) {
   await connectDB();
+
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
 
   const { id } = await context.params; // ✅ FIX
 
@@ -74,6 +84,10 @@ export async function PUT(req, context) {
 // ✅ DELETE BRAND
 export async function DELETE(req, context) {
   await connectDB();
+
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
 
   // Unwrap async params
   const { id } = await context.params;

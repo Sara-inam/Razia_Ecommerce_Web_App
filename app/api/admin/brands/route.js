@@ -3,20 +3,50 @@ import { connectDB } from "@/lib/db";
 import Brand from "@/models/Brand";
 import Collection from "@/models/Collection";
 import cloudinary from "@/lib/cloudinary";
+import { requireAdmin } from "@/middleware/admin"; // ✅ import admin middleware
 
-// ✅ GET ALL BRANDS
-export async function GET() {
+// ✅ GET ALL BRANDS WITH PAGINATION
+export async function GET(req) {
   await connectDB();
 
-  const brands = await Brand.find()
-    .populate("collection"); // ✅ lowercase
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
 
-  return NextResponse.json(brands);
+  const { searchParams } = new URL(req.url);
+
+  const page = parseInt(searchParams.get("page")) || 1;
+  const limit = parseInt(searchParams.get("limit")) || 5;
+
+  const skip = (page - 1) * limit;
+
+  const total = await Brand.countDocuments();
+
+  const brands = await Brand.find()
+    .populate("collection")
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 }); // optional sorting
+
+  return NextResponse.json({
+    success: true,
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+    hasNextPage: page * limit < total,
+    hasPrevPage: page > 1,
+    data: brands,
+  });
 }
 
 // ✅ CREATE BRAND
 export async function POST(req) {
   await connectDB();
+
+  // Admin check
+  const adminCheck = await requireAdmin(req);
+  if (adminCheck instanceof NextResponse) return adminCheck;
 
   const formData = await req.formData();
 

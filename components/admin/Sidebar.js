@@ -3,74 +3,71 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FaHome, FaBox, FaUser, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Fetch admin info
+const fetchAdmin = async () => {
+  const res = await fetch("/api/auth/me", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch admin info");
+  return res.json();
+};
+
+// Refresh token
+const refreshToken = async () => {
+  const res = await fetch("/api/auth/refresh-token", { credentials: "include" });
+  if (!res.ok) throw new Error("Token refresh failed");
+  return res.json();
+};
+
+// Logout
+const logoutFn = async () => {
+  const res = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+  if (!res.ok) throw new Error("Logout failed");
+  return res.json();
+};
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const queryClient = useQueryClient();
 
   const navItems = [
     { name: "Dashboard", icon: <FaHome />, link: "/admin" },
-      { name: "Collections", icon: <FaBox />, link: "/admin/collections" },
-       { name: "Brands", icon: <FaBox />, link: "/admin/brands" },
+    { name: "Collections", icon: <FaBox />, link: "/admin/collections" },
+    { name: "Brands", icon: <FaBox />, link: "/admin/brands" },
     { name: "Products", icon: <FaBox />, link: "/admin/products" },
     { name: "Users", icon: <FaUser />, link: "/admin/users" },
-   
-    // Add more admin pages here
   ];
 
-  // ✅ Check login & admin role
-  useEffect(() => {
-    const checkAdmin = async () => {
+  // Fetch admin info with TanStack Query
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["adminInfo"],
+    queryFn: fetchAdmin,
+    retry: 1,
+    onError: async () => {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
-        const data = await res.json();
-        if (data.loggedIn && data.user.role === "admin") {
-          setIsAdmin(true);
-        } else {
-          router.push("/"); // Redirect non-admins
-        }
-      } catch (err) {
-        router.push("/"); // Redirect if error
-      }
-    };
-    checkAdmin();
-  }, [router]);
-
-  // ✅ Optional: Refresh access token on mount
-  useEffect(() => {
-    const refreshAccessToken = async () => {
-      try {
-        await fetch("/api/auth/refresh-token", { credentials: "include" });
+        await refreshToken();
+        refetch();
       } catch {
-        handleLogout(); // Force logout if refresh fails
+        router.push("/"); // redirect if refresh fails
       }
-    };
-    refreshAccessToken();
-  }, []);
+    },
+  });
 
-  // Logout function
-  const handleLogout = async () => {
-    try {
-      const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setIsAdmin(false);
-        router.push("/"); // redirect to homepage
-      } else {
-        console.error(data.message || "Logout failed");
-      }
-    } catch (err) {
-      console.error("Something went wrong during logout", err);
-    }
-  };
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: logoutFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["adminInfo"]);
+      router.push("/");
+    },
+    onError: (err) => console.error(err),
+  });
 
-  if (!isAdmin) return null; // Prevent render for non-admin
+  // Always render sidebar, show loading or unauthorized messages
+  const isAdmin = data?.loggedIn && data.user?.role === "admin";
 
   return (
     <>
@@ -80,6 +77,12 @@ export default function Sidebar() {
           <div className="p-6 font-bold text-2xl border-b border-green-600 text-center">
             Admin Panel
           </div>
+
+          {!isLoading && !isAdmin && (
+            <div className="p-4 text-center text-yellow-200 font-semibold">
+              Not authorized
+            </div>
+          )}
 
           <nav className="mt-6 flex flex-col">
             {navItems.map((item) => {
@@ -101,15 +104,17 @@ export default function Sidebar() {
         </div>
 
         {/* Logout Button */}
-        <div className="p-6">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md font-semibold transition"
-          >
-            <FaSignOutAlt />
-            Logout
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="p-6">
+            <button
+              onClick={() => logoutMutation.mutate()}
+              className="flex items-center gap-2 w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md font-semibold transition"
+            >
+              <FaSignOutAlt />
+              Logout
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Mobile Navbar */}
@@ -140,14 +145,18 @@ export default function Sidebar() {
               );
             })}
 
-            {/* Logout Button */}
-            <button
-              onClick={() => { handleLogout(); setOpen(false); }}
-              className="flex items-center gap-2 px-6 py-3 mt-2 bg-red-600 hover:bg-red-700 rounded-md font-semibold transition"
-            >
-              <FaSignOutAlt />
-              Logout
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  logoutMutation.mutate();
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 px-6 py-3 mt-2 bg-red-600 hover:bg-red-700 rounded-md font-semibold transition"
+              >
+                <FaSignOutAlt />
+                Logout
+              </button>
+            )}
           </nav>
         )}
       </div>
