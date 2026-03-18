@@ -15,7 +15,7 @@ export async function GET(req) {
 
   // ✅ Pagination
   const page = parseInt(searchParams.get("page")) || 1;
-  const limit = parseInt(searchParams.get("limit")) || 10;
+  const limit = parseInt(searchParams.get("limit")) || 12;
   const skip = (page - 1) * limit;
 
   try {
