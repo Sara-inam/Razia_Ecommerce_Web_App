@@ -8,7 +8,7 @@ export default function AddBrandModal({ onClose, refresh }) {
   const [image, setImage] = useState(null);
   const [collectionId, setCollectionId] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [message, setMessage] = useState({ text: "", type: "" }); // type: 'success' | 'error'
+  const [message, setMessage] = useState({ text: "", type: "" });
 
   const dropdownRef = useRef(null);
   const queryClient = useQueryClient();
@@ -30,14 +30,25 @@ export default function AddBrandModal({ onClose, refresh }) {
         method: "POST",
         body: formData,
       });
-      if (!res.ok) throw new Error("Failed to add brand");
-      return res.json();
+
+      // Safely parse JSON response
+      let data;
+      const text = await res.text();
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (err) {
+        console.error("Failed to parse JSON:", text);
+        throw new Error("Invalid server response");
+      }
+
+      // Throw an error if server returned bad status
+      if (!res.ok) throw new Error(data?.message || "Failed to add brand");
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
       setMessage({ text: "Brand added successfully!", type: "success" });
 
-      // Auto-close modal after short delay
       setTimeout(() => {
         setMessage({ text: "", type: "" });
         refresh();
@@ -46,23 +57,28 @@ export default function AddBrandModal({ onClose, refresh }) {
     },
     onError: (err) => {
       console.error(err);
-      setMessage({ text: "Something went wrong while adding the brand.", type: "error" });
-
-      // Hide error message after 3s
+      setMessage({
+        text: err.message || "Something went wrong while adding the brand.",
+        type: "error",
+      });
       setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     },
   });
 
   const handleSubmit = () => {
+    if (!brandName.trim()) {
+      setMessage({ text: "Brand name cannot be empty.", type: "error" });
+      return setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+    }
+
     if (!collectionId) {
       setMessage({ text: "Please select a collection.", type: "error" });
-      setTimeout(() => setMessage({ text: "", type: "" }), 3000);
-      return;
+      return setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     }
 
     const formData = new FormData();
-    formData.append("brand_name", brandName);
-    formData.append("description", description);
+    formData.append("brand_name", brandName.trim());
+    formData.append("description", description.trim());
     formData.append("collection", collectionId);
     if (image) formData.append("image", image);
 
@@ -79,7 +95,7 @@ export default function AddBrandModal({ onClose, refresh }) {
         </h2>
 
         <form className="flex flex-col gap-4 relative">
-          {/* ✅ Professional Messages */}
+          {/* Messages */}
           {message.text && (
             <div
               className={`absolute top-0 left-1/2 -translate-x-1/2 w-[90%] text-center px-4 py-2 rounded-lg font-medium shadow-md animate-fadeIn transition-all ${
@@ -110,7 +126,7 @@ export default function AddBrandModal({ onClose, refresh }) {
             rows={3}
           />
 
-          {/* Modern dropdown */}
+          {/* Collection dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -147,7 +163,7 @@ export default function AddBrandModal({ onClose, refresh }) {
             )}
           </div>
 
-          {/* Image Upload with preview */}
+          {/* Image Upload */}
           <div className="flex flex-col gap-2">
             <label className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-200 transition text-center">
               {image ? "Change Image" : "Choose Image"}

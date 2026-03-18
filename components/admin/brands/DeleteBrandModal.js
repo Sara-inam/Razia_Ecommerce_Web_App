@@ -9,8 +9,9 @@ export default function DeleteBrandModal({ id, onClose, refresh }) {
       const res = await fetch(`/api/admin/brands/${brandId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete brand");
-      return res.json();
+      const result = await res.json(); // parse backend response
+      if (!res.ok) throw new Error(result.message || "Failed to delete brand");
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
@@ -19,7 +20,7 @@ export default function DeleteBrandModal({ id, onClose, refresh }) {
     },
     onError: (err) => {
       console.error(err);
-      alert("Something went wrong while deleting.");
+      alert(err.message || "Something went wrong while deleting.");
     },
   });
 

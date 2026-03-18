@@ -1,32 +1,18 @@
 import mongoose from "mongoose";
 
-const BrandSchema = new mongoose.Schema(
+const { Schema, model, models, Types } = mongoose;
+
+const BrandSchema = new Schema(
   {
-    brand_name: {
-      type: String,
-      required: true,
-      trim: true,
-      unique: true,
-    },
-
-    description: {
-      type: String,
-      required: true,
-    },
-
-    image: {
-      type: String, // Cloudinary URL
-      required: true,
-    },
-    collection: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Collection",
-  required: true
-},
+    brand_name: { type: String, required: true },
+    description: String,
+    image: { type: String, required: true },
+    collection: { type: Types.ObjectId, ref: "Collection", required: true },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true, strictPopulate: false  }
 );
 
-export default mongoose.models.Brand || mongoose.model("Brand", BrandSchema);
+// ✅ Compound index to allow same brand name in different collections
+BrandSchema.index({ brand_name: 1, collection: 1 }, { unique: true });
+
+export default models.Brand || model("Brand", BrandSchema);

@@ -1,26 +1,27 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function EditBrandModal({ data, onClose, refresh }) {
-  const [brandName, setBrandName] = useState(data.brand_name);
-  const [description, setDescription] = useState(data.description);
-  const [image, setImage] = useState(null);
-  const [collections, setCollections] = useState([]);
+  const [brandName, setBrandName] = useState(data.brand_name || "");
+  const [description, setDescription] = useState(data.description || "");
+  const [image, setImage] = useState(null); // new image
   const [collectionId, setCollectionId] = useState(data.collection?._id || "");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [message, setMessage] = useState({ text: "", type: "" }); // type: 'success' | 'error'
+  const [message, setMessage] = useState({ text: "", type: "" });
 
   const dropdownRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // Fetch collections on mount
-  useEffect(() => {
-    fetch("/api/admin/collections")
-      .then((res) => res.json())
-      .then((data) => setCollections(data.data || []))
-      .catch((err) => console.error(err));
-  }, []);
+  // Fetch collections
+  const { data: collections = [], isLoading } = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/collections");
+      const json = await res.json();
+      return json.data || [];
+    },
+  });
 
   // Mutation for updating brand
   const mutation = useMutation({
@@ -29,36 +30,46 @@ export default function EditBrandModal({ data, onClose, refresh }) {
         method: "PUT",
         body: formData,
       });
-      if (!res.ok) throw new Error("Failed to update brand");
-      return res.json();
+
+      const resultText = await res.text();
+      let result;
+      try {
+        result = resultText ? JSON.parse(resultText) : null;
+      } catch {
+        throw new Error("Invalid server response");
+      }
+
+      if (!res.ok) throw new Error(result?.message || "Failed to update brand");
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
       setMessage({ text: "Brand updated successfully!", type: "success" });
-
       setTimeout(() => {
         setMessage({ text: "", type: "" });
         refresh();
         onClose();
-      }, 1500); // show message for 1.5s
+      }, 1500);
     },
     onError: (err) => {
-      console.error(err);
-      setMessage({ text: "Something went wrong while updating the brand.", type: "error" });
+      setMessage({ text: err.message || "Something went wrong.", type: "error" });
       setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     },
   });
 
   const handleSubmit = () => {
+    if (!brandName.trim()) {
+      setMessage({ text: "Brand name cannot be empty.", type: "error" });
+      return setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+    }
     if (!collectionId) {
       setMessage({ text: "Please select a collection.", type: "error" });
-      setTimeout(() => setMessage({ text: "", type: "" }), 3000);
-      return;
+      return setTimeout(() => setMessage({ text: "", type: "" }), 3000);
     }
 
     const formData = new FormData();
-    formData.append("brand_name", brandName);
-    formData.append("description", description);
+    formData.append("brand_name", brandName.trim());
+    formData.append("description", description.trim());
     formData.append("collection", collectionId);
     if (image) formData.append("image", image);
 
@@ -74,14 +85,12 @@ export default function EditBrandModal({ data, onClose, refresh }) {
           Edit Brand
         </h2>
 
-        <form className="flex flex-col gap-4 relative">
-          {/* ✅ Professional Messages */}
+        <form className="flex flex-col gap-4 relative" onSubmit={(e) => e.preventDefault()}>
+          {/* Messages */}
           {message.text && (
             <div
               className={`absolute top-0 left-1/2 -translate-x-1/2 w-[90%] text-center px-4 py-2 rounded-lg font-medium shadow-md animate-fadeIn transition-all ${
-                message.type === "success"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-700"
+                message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"
               }`}
             >
               {message.text}
@@ -106,7 +115,7 @@ export default function EditBrandModal({ data, onClose, refresh }) {
             rows={3}
           />
 
-          {/* Modern dropdown */}
+          {/* Collection Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -123,7 +132,7 @@ export default function EditBrandModal({ data, onClose, refresh }) {
                 ref={dropdownRef}
                 className="absolute z-50 w-full max-h-48 overflow-y-auto mt-1 bg-white border border-gray-300 rounded shadow-lg"
               >
-                {collections.length === 0 ? (
+                {isLoading ? (
                   <li className="px-4 py-2 text-gray-400">Loading...</li>
                 ) : (
                   collections.map((c) => (
@@ -143,7 +152,7 @@ export default function EditBrandModal({ data, onClose, refresh }) {
             )}
           </div>
 
-          {/* Image Upload with preview */}
+          {/* Image Upload */}
           <div className="flex flex-col gap-2">
             <label className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-200 transition text-center">
               {image ? "Change Image" : "Choose Image"}

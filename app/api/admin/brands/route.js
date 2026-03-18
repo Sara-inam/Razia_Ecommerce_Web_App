@@ -41,36 +41,39 @@ export async function GET(req) {
 }
 
 // ✅ CREATE BRAND
+// ✅ CREATE BRAND
 export async function POST(req) {
   await connectDB();
 
-  // Admin check
   const adminCheck = await requireAdmin(req);
   if (adminCheck instanceof NextResponse) return adminCheck;
 
   const formData = await req.formData();
-
-  const brand_name = formData.get("brand_name");
-  const description = formData.get("description");
+  const brand_name = formData.get("brand_name")?.trim();
+  const description = formData.get("description")?.trim();
   const collection = formData.get("collection");
   const file = formData.get("image");
 
-  let imageUrl = "";
+  // Duplicate check per collection
+  const existing = await Brand.findOne({ brand_name, collection });
+  if (existing) {
+    return NextResponse.json(
+      { message: `Brand "${brand_name}" already exists in this collection.` },
+      { status: 400 }
+    );
+  }
 
-  // Upload image only if exists
+  let imageUrl = "";
   if (file && file.size > 0) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream(
-          { folder: "brands" },
-          (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          }
-        )
+        .upload_stream({ folder: "brands" }, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        })
         .end(buffer);
     });
 
@@ -80,13 +83,11 @@ export async function POST(req) {
   const newBrand = await Brand.create({
     brand_name,
     description,
-    collection, // foreign key
+    collection,
     image: imageUrl,
   });
 
-  // populate before sending to frontend
-  const populatedBrand = await Brand.findById(newBrand._id)
-    .populate("collection");
+  const populatedBrand = await Brand.findById(newBrand._id).populate("collection");
 
   return NextResponse.json(populatedBrand, { status: 201 });
 }
