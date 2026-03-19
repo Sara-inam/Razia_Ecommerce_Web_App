@@ -145,15 +145,15 @@ export default function Header({ onLoginClick, onSignUpClick }) {
                             />
                             {activeCollection === col && (
                               <div className="absolute top-0 left-full ml-1 flex flex-col bg-white shadow-lg rounded-md min-w-[180px] z-50 animate-slide-in">
-                               {groupedCollections[col].map((cat) => (
-  <Link
-    key={cat}
-    href={`/products/${makeSlug(col)}/${makeSlug(cat)}`}
-    className="px-4 py-2 hover:bg-green-50 hover:text-green-700 block"
-  >
-    {cat}
-  </Link>
-))}
+                                {groupedCollections[col].map((cat) => (
+                                  <Link
+                                    key={cat}
+                                    href={`/products/${makeSlug(col)}/${makeSlug(cat)}`}
+                                    className="px-4 py-2 hover:bg-green-50 hover:text-green-700 block"
+                                  >
+                                    {cat}
+                                  </Link>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -214,7 +214,7 @@ export default function Header({ onLoginClick, onSignUpClick }) {
               <FaShoppingCart className="text-xl text-gray-700 hover:text-green-700" />
               {cart.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
-                  {cart.length}
+                  {cart.reduce((total, item) => total + item.quantity, 0)}
                 </span>
               )}
             </Link>
@@ -286,15 +286,15 @@ export default function Header({ onLoginClick, onSignUpClick }) {
                       {/* CATEGORY + SUBCATEGORY */}
                       {isOpen && (
                         <div className="ml-4 mt-1 flex flex-col space-y-1">
-                         {groupedCollections[col].map((cat) => (
-  <Link
-    key={cat}
-    href={`/products/${makeSlug(col)}/${makeSlug(cat)}`}
-    className="ml-4 px-3 py-1 hover:bg-green-50 rounded-md block"
-  >
-    {cat}
-  </Link>
-))}
+                          {groupedCollections[col].map((cat) => (
+                            <Link
+                              key={cat}
+                              href={`/products/${makeSlug(col)}/${makeSlug(cat)}`}
+                              className="ml-4 px-3 py-1 hover:bg-green-50 rounded-md block"
+                            >
+                              {cat}
+                            </Link>
+                          ))}
                         </div>
                       )}
                     </div>

@@ -1,24 +1,78 @@
 "use client";
 
-import CartItem from '@/components/CartItem';
-
-const cart = [
-  { id: 1, name: "Leather Bag", price: 2000 },
-  { id: 3, name: "Wrist Watch", price: 5000 },
-];
+import CartItem from "@/components/CartItem";
+import { useCart } from "@/context/CartContext";
 
 export default function CartPage() {
-  if(cart.length === 0) return <p className="mt-10 text-center">Your cart is empty.</p>;
+  const { cart } = useCart();
+
+  if (!cart || cart.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <h2 className="text-xl font-semibold text-gray-700">
+          Your cart is empty 🛒
+        </h2>
+        <p className="text-sm text-gray-500 mt-2">
+          Add some products to see them here
+        </p>
+      </div>
+    );
+  }
+
+  const total = cart.reduce((a, b) => a + b.price * b.quantity, 0);
 
   return (
-    <div className="mt-10">
-      <h2 className="text-2xl font-bold mb-4">Cart</h2>
-      {cart.map(item => (
-        <CartItem key={item.id} item={item} />
-      ))}
-      <p className="mt-4 font-bold">
-        Total: Rs {cart.reduce((a,b)=>a+b.price, 0)}
-      </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* Title */}
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
+        🛒 Shopping Cart
+      </h2>
+
+      {/* Layout */}
+      <div className="flex flex-col lg:flex-row gap-6">
+
+        {/* LEFT - Items */}
+        <div className="flex-1 space-y-4">
+          {cart.map((item, index) => (
+            <CartItem key={index} item={item} />
+          ))}
+        </div>
+
+        {/* RIGHT - Summary */}
+        <div className="w-full lg:w-1/3">
+
+          <div className="bg-white rounded-2xl shadow-lg p-5 sticky top-24">
+
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">
+              Order Summary
+            </h3>
+
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Subtotal</span>
+              <span>Rs {total}</span>
+            </div>
+
+            <div className="flex justify-between text-sm text-gray-600 mb-4">
+              <span>Delivery</span>
+              <span>Calculated at checkout</span>
+            </div>
+
+            <hr className="my-3" />
+
+            <div className="flex justify-between text-lg font-bold text-gray-900">
+              <span>Total</span>
+              <span>Rs {total}</span>
+            </div>
+
+            {/* Checkout Button */}
+            <button className="w-full mt-5 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition">
+              Proceed to Checkout
+            </button>
+
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
