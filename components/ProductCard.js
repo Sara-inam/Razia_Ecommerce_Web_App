@@ -27,13 +27,13 @@ export default function ProductCard({ product, selectedColor, onSelectColor }) {
         </div>
 
         {/* Image */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden mt-2">
-          <img
-            src={selectedColor?.images?.[0] || "/placeholder.png"}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-          />
-        </div>
+       <div className="relative w-32 h-32 md:w-36 md:h-36 mx-auto mt-2 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+  <img
+    src={selectedColor?.images?.[0] || "/placeholder.png"}
+    alt={product.name}
+    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+  />
+</div>
 
         {/* Content */}
         <div className="p-3 flex flex-col flex-grow">
