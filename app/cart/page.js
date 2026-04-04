@@ -2,9 +2,11 @@
 
 import CartItem from "@/components/CartItem";
 import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation"; // ✅ import router
 
 export default function CartPage() {
   const { cart } = useCart();
+  const router = useRouter(); // ✅ init router
 
   if (!cart || cart.length === 0) {
     return (
@@ -21,17 +23,18 @@ export default function CartPage() {
 
   const total = cart.reduce((a, b) => a + b.price * b.quantity, 0);
 
+  const handleCheckout = () => {
+    router.push("/checkout"); // ✅ Replace with your checkout page route
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
       {/* Title */}
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
         🛒 Shopping Cart
       </h2>
 
-      {/* Layout */}
       <div className="flex flex-col lg:flex-row gap-6">
-
         {/* LEFT - Items */}
         <div className="flex-1 space-y-4">
           {cart.map((item, index) => (
@@ -41,9 +44,7 @@ export default function CartPage() {
 
         {/* RIGHT - Summary */}
         <div className="w-full lg:w-1/3">
-
           <div className="bg-white rounded-2xl shadow-lg p-5 sticky top-24">
-
             <h3 className="text-lg font-semibold mb-4 text-gray-800">
               Order Summary
             </h3>
@@ -66,10 +67,12 @@ export default function CartPage() {
             </div>
 
             {/* Checkout Button */}
-            <button className="w-full mt-5 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition">
+            <button
+              onClick={handleCheckout} // ✅ navigate
+              className="w-full mt-5 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition"
+            >
               Proceed to Checkout
             </button>
-
           </div>
         </div>
       </div>

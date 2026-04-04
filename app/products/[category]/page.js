@@ -17,6 +17,7 @@ export default function ProductsPage() {
 
   const searchParams = useSearchParams();
   const subFromURL = searchParams.get("sub_category");
+  const collectionFromURL = searchParams.get("collection"); // NEW
 
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -36,6 +37,13 @@ export default function ProductsPage() {
       setActiveSubcategory(slugToName(subFromURL));
     }
   }, [subFromURL]);
+
+  // ✅ set collection from URL
+  useEffect(() => {
+    if (collectionFromURL) {
+      setActiveCollection(slugToName(collectionFromURL));
+    }
+  }, [collectionFromURL]);
 
   // ✅ FETCH PRODUCTS
   useEffect(() => {
@@ -83,29 +91,26 @@ export default function ProductsPage() {
 
   // ✅ BRANDS
   const brands = [
-  "All",
-  ...Array.from(
-    new Set(
-      products
-        .filter((p) => {
-          // ✅ Collection filter
-          if (activeCollection) {
-            return (
-              p.brand?.collection?.collection_name === activeCollection
-            );
-          }
-          return true;
-        })
-        .filter((p) =>
-          activeSubcategory === "All"
-            ? true
-            : p.sub_category === activeSubcategory
-        )
-        .map((p) => p.brand?.brand_name)
-        .filter(Boolean)
-    )
-  ),
-];
+    "All",
+    ...Array.from(
+      new Set(
+        products
+          .filter((p) => {
+            if (activeCollection) {
+              return p.brand?.collection?.collection_name === activeCollection;
+            }
+            return true;
+          })
+          .filter((p) =>
+            activeSubcategory === "All"
+              ? true
+              : p.sub_category === activeSubcategory
+          )
+          .map((p) => p.brand?.brand_name)
+          .filter(Boolean)
+      )
+    ),
+  ];
 
   // ✅ RESET FILTERS
   useEffect(() => {
@@ -113,24 +118,20 @@ export default function ProductsPage() {
     setCurrentPage(1);
   }, [activeSubcategory, activeCollection]);
 
-  // ✅ FILTER LOGIC (MAIN FIX 🔥)
+  // ✅ FILTER LOGIC
   useEffect(() => {
     let temp = [...products];
 
-    // Collection filter
     if (activeCollection) {
-  temp = temp.filter(
-    (p) =>
-      p.brand?.collection?.collection_name === activeCollection
-  );
-}
+      temp = temp.filter(
+        (p) => p.brand?.collection?.collection_name === activeCollection
+      );
+    }
 
-    // Subcategory filter
     if (activeSubcategory !== "All") {
       temp = temp.filter((p) => p.sub_category === activeSubcategory);
     }
 
-    // Brand filter
     if (activeBrand !== "All") {
       temp = temp.filter((p) => p.brand?.brand_name === activeBrand);
     }
@@ -190,10 +191,11 @@ export default function ProductsPage() {
                 <button
                   key={sub}
                   onClick={() => setActiveSubcategory(sub)}
-                  className={`whitespace-nowrap px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${activeSubcategory === sub
+                  className={`whitespace-nowrap px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                    activeSubcategory === sub
                       ? "bg-green-600 text-white shadow"
                       : "bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700"
-                    }`}
+                  }`}
                 >
                   {sub}
                 </button>
@@ -212,10 +214,11 @@ export default function ProductsPage() {
                 <button
                   key={brand}
                   onClick={() => setActiveBrand(brand)}
-                  className={`whitespace-nowrap px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${activeBrand === brand
+                  className={`whitespace-nowrap px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                    activeBrand === brand
                       ? "bg-blue-600 text-white shadow"
                       : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700"
-                    }`}
+                  }`}
                 >
                   {brand}
                 </button>
@@ -263,10 +266,11 @@ export default function ProductsPage() {
             <button
               key={p}
               onClick={() => setCurrentPage(p)}
-              className={`px-3 py-1 rounded-lg ${p === currentPage
+              className={`px-3 py-1 rounded-lg ${
+                p === currentPage
                   ? "bg-green-600 text-white"
                   : "bg-gray-200"
-                }`}
+              }`}
             >
               {p}
             </button>

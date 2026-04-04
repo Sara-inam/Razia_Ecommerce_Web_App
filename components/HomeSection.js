@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProductCard from "@/components/ProductCard";
 import ProductModal from "@/components/ProductModal";
+const makeSlug = (text = "") =>
+  text.toLowerCase().trim().replace(/\s+/g, "-");
 
 export default function HomeSection({ section }) {
   const router = useRouter();
@@ -27,11 +29,14 @@ export default function HomeSection({ section }) {
     setSelectedColors((prev) => ({ ...prev, [productId]: color }));
   };
 
-  const handleViewAll = () => {
-    let url = `/products/${collection}/${category}`;
-    if (subCategory) url += `?sub_category=${subCategory}`;
-    router.push(url);
-  };
+const handleViewAll = () => {
+  const catSlug = makeSlug(category);
+  const query = subCategory
+    ? `?sub_category=${makeSlug(subCategory)}&collection=${makeSlug(collection)}`
+    : `?collection=${makeSlug(collection)}`;
+
+  router.push(`/products/${catSlug}${query}`);
+};
 
   return (
     <>

@@ -38,6 +38,7 @@ export default function Sidebar() {
     { name: "Collections", icon: <FaBox />, link: "/admin/collections" },
     { name: "Brands", icon: <FaBox />, link: "/admin/brands" },
     { name: "Products", icon: <FaBox />, link: "/admin/products" },
+    { name: "Orders", icon: <FaBox />, link: "/admin/orders" },
     { name: "Users", icon: <FaUser />, link: "/admin/users" },
   ];
 
