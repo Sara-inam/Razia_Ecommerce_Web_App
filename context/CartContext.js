@@ -63,6 +63,15 @@ export const CartProvider = ({ children }) => {
       )
     );
   };
+  // 🧹 CLEAR ENTIRE CART
+const clearCart = () => {
+  setCart([]); // cart state empty
+  try {
+    localStorage.removeItem("cart"); // localStorage se bhi remove
+  } catch (error) {
+    console.error("Failed to clear cart from localStorage:", error);
+  }
+};
 
   return (
     <CartContext.Provider
@@ -70,6 +79,7 @@ export const CartProvider = ({ children }) => {
         cart,
         addToCart,
         removeFromCart,
+        clearCart, 
       }}
     >
       {children}

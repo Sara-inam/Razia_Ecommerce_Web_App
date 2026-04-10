@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FaHome, FaBox, FaUser, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext"; // ✅ import AuthContext
 
 // Fetch admin info
 const fetchAdmin = async () => {
@@ -20,7 +21,7 @@ const refreshToken = async () => {
   return res.json();
 };
 
-// Logout
+// Logout API
 const logoutFn = async () => {
   const res = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
   if (!res.ok) throw new Error("Logout failed");
@@ -28,6 +29,7 @@ const logoutFn = async () => {
 };
 
 export default function Sidebar() {
+  const { logout } = useAuth(); // ✅ get logout from AuthContext
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -40,10 +42,13 @@ export default function Sidebar() {
     { name: "Products", icon: <FaBox />, link: "/admin/products" },
     { name: "Orders", icon: <FaBox />, link: "/admin/orders" },
     { name: "Users", icon: <FaUser />, link: "/admin/users" },
+     { name: "Notifications", icon: <FaUser />, link: "/admin/notifications" },
+      { name: "Contact Messages", icon: <FaUser />, link: "/admin/messages" },
+      { name: "Home Slider", icon: <FaUser />, link: "/admin/slider" },
   ];
 
-  // Fetch admin info with TanStack Query
-  const { data, isLoading, isError, refetch } = useQuery({
+  // Fetch admin info
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["adminInfo"],
     queryFn: fetchAdmin,
     retry: 1,
@@ -61,13 +66,15 @@ export default function Sidebar() {
   const logoutMutation = useMutation({
     mutationFn: logoutFn,
     onSuccess: () => {
-      queryClient.invalidateQueries(["adminInfo"]);
-      router.push("/");
+      logout(); // ✅ now works
+      localStorage.removeItem("user");
+      localStorage.removeItem("cart");
+      queryClient.clear();
+      router.push("/"); // redirect after logout
     },
     onError: (err) => console.error(err),
   });
 
-  // Always render sidebar, show loading or unauthorized messages
   const isAdmin = data?.loggedIn && data.user?.role === "admin";
 
   return (

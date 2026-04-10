@@ -1,16 +1,17 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 
-export default function LoginForm({ show = false, onClose }) {
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
+export default function LoginForm({ show = false, onClose, switchForm }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [message, setMessage] = useState("");
   const [type, setType] = useState(""); // success | error
   const [loading, setLoading] = useState(false);
@@ -21,9 +22,8 @@ export default function LoginForm({ show = false, onClose }) {
     e.preventDefault();
     setMessage("");
 
-    // email validation
+    // simple email validation
     const emailRegex = /\S+@\S+\.\S+/;
-
     if (!emailRegex.test(email)) {
       setType("error");
       setMessage("Invalid email address");
@@ -35,11 +35,9 @@ export default function LoginForm({ show = false, onClose }) {
 
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // ✅ this ensures cookies are sent/received
+        credentials: "include", // cookies
       });
 
       const data = await res.json();
@@ -47,17 +45,31 @@ export default function LoginForm({ show = false, onClose }) {
       if (!res.ok) {
         setType("error");
         setMessage(data.message || "Login failed");
-      } else {
-        setType("success");
-        setMessage("Login successful 🎉 Redirecting...");
-
-        setTimeout(() => {
-          window.location.href = data.redirect; // forces full reload
-        }, 1500);
+        return;
       }
-    } catch (error) {
+
+      // Save user info in context and localStorage
+      const userData = data.user;
+      login(userData); // update context
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      setType("success");
+      setMessage("Login successful 🎉 Redirecting...");
+
+      // Redirect based on role
+      setTimeout(() => {
+  onClose?.();
+
+  if (userData.role === "admin") {
+    router.push("/admin"); // sirf admin redirect hoga
+  } else {
+    router.refresh(); // user same page par rahe + UI update ho jaye
+  }
+}, 800);
+    } catch (err) {
+      console.error(err);
       setType("error");
-      setMessage("Something went wrong");
+      setMessage("Something went wrong, try again.");
     } finally {
       setLoading(false);
     }
@@ -76,13 +88,11 @@ export default function LoginForm({ show = false, onClose }) {
           Welcome Back
         </h2>
 
-        {/* Message Banner */}
         {message && (
           <div
-            className={`mb-4 text-center py-2 rounded-lg text-sm font-medium ${type === "success"
-              ? "bg-green-500 text-white"
-              : "bg-red-500 text-white"
-              }`}
+            className={`mb-4 text-center py-2 rounded-lg text-sm font-medium ${
+              type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+            }`}
           >
             {message}
           </div>
@@ -107,7 +117,6 @@ export default function LoginForm({ show = false, onClose }) {
               required
               className="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder-white/60 border border-white/40 focus:bg-white/30 focus:outline-none"
             />
-
             <button
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-white text-lg"
@@ -137,9 +146,12 @@ export default function LoginForm({ show = false, onClose }) {
 
         <p className="text-white/70 text-sm text-center mt-5">
           Don't have an account?{" "}
-          <Link href="/signup" className="text-green-500">
+          <span
+            className="text-green-500 cursor-pointer"
+            onClick={switchForm}
+          >
             Sign Up
-          </Link>
+          </span>
         </p>
       </div>
     </div>

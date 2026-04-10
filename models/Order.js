@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
 const OrderSchema = new mongoose.Schema({
+    // ✅ ADD THIS (VERY IMPORTANT)
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   customer: {
     name: String,
     email: String,
@@ -18,6 +24,7 @@ const OrderSchema = new mongoose.Schema({
       quantity: Number,
       color: String,
       size: String,
+      image: String, 
     }
   ],
 

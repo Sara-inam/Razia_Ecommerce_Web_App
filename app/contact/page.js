@@ -4,12 +4,22 @@ import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { FaWhatsapp, FaInstagram, FaLinkedin } from "react-icons/fa";
 
+// ✅ NEW: Auth import
+import { useAuth } from "@/context/AuthContext";
+
+// ✅ Toast Imports
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export default function Contact() {
   const [form, setForm] = useState({
     name: "",
     email: "",
     message: "",
   });
+
+  // ✅ NEW: user lo
+  const { user } = useAuth();
 
   // ✅ TanStack Mutation
   const mutation = useMutation({
@@ -25,18 +35,30 @@ export default function Contact() {
       return res.json();
     },
     onSuccess: () => {
-      alert("Message sent successfully!");
+      toast.success("Message sent successfully! 🚀");
       setForm({ name: "", email: "", message: "" });
     },
     onError: (error) => {
-      alert(error.message);
+      toast.error(error.message || "Something went wrong!");
     },
   });
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    mutation.mutate(form);
+  e.preventDefault();
+
+  if (!user) {
+    toast.error("Please login first 🔒");
+    return;
+  }
+
+  // ✅ force email from logged-in user
+  const updatedForm = {
+    ...form,
+    email: user.email,
   };
+
+  mutation.mutate(updatedForm);
+};
 
   return (
     <div className="bg-gradient-to-br from-green-100 via-white to-green-50 px-4 pt-24 pb-16">
@@ -60,18 +82,30 @@ export default function Contact() {
           </div>
 
           <div className="flex gap-4 pt-4 border-t border-white/40">
-            <a href="https://wa.me/923001234567" target="_blank" rel="noopener noreferrer"
-              className="bg-white/60 p-3 rounded-full text-green-600 hover:scale-110 transition duration-300 shadow-md">
+            <a
+              href="https://wa.me/923001234567"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/60 p-3 rounded-full text-green-600 hover:scale-110 transition duration-300 shadow-md"
+            >
               <FaWhatsapp />
             </a>
 
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"
-              className="bg-white/60 p-3 rounded-full text-pink-500 hover:scale-110 transition duration-300 shadow-md">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/60 p-3 rounded-full text-pink-500 hover:scale-110 transition duration-300 shadow-md"
+            >
               <FaInstagram />
             </a>
 
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
-              className="bg-white/60 p-3 rounded-full text-blue-600 hover:scale-110 transition duration-300 shadow-md">
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/60 p-3 rounded-full text-blue-600 hover:scale-110 transition duration-300 shadow-md"
+            >
               <FaLinkedin />
             </a>
           </div>
@@ -90,14 +124,15 @@ export default function Contact() {
               required
             />
 
-            <input
-              type="email"
-              placeholder="Email Address"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-white/70 border border-white/50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-              required
-            />
+           <input
+  type="email"
+  placeholder="Email Address"
+  value={user ? user.email : form.email}
+  onChange={(e) => setForm({ ...form, email: e.target.value })}
+  disabled={!!user} // ✅ login ho to edit nahi kar sakta
+  className="w-full bg-white/70 border border-white/50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+  required
+/>
 
             <textarea
               placeholder="Your Message"
@@ -121,7 +156,13 @@ export default function Contact() {
 
       </div>
 
-      {/* Animations (unchanged) */}
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        theme="colored"
+      />
+
+      {/* Animations same */}
       <style jsx>{`
         @keyframes fadeIn {
           0% { opacity: 0; transform: scale(0.95); }

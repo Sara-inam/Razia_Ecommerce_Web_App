@@ -31,13 +31,17 @@ await user.save();
 
   // 4️⃣ Set cookies
   const res = NextResponse.json({
-    message: "Login successful",
+  message: "Login successful",
+  user: {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
     role: user.role,
-    token,        // Access token visible in response
-    refreshToken, // Refresh token visible in response
-    redirect: user.role === "admin" ? "/admin" : "/",
-  });
-
+  },
+  token,
+  refreshToken,
+  redirect: user.role === "admin" ? "/admin" : "/",
+});
   // Access token cookie
   res.cookies.set({
     name: "token",

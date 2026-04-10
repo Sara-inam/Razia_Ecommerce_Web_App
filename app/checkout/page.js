@@ -3,9 +3,11 @@ import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import ShippingForm from "@/components/ShippingForm";
 import OrderSummary from "@/components/OrderSummary";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function CheckoutPage() {
-  const { cart } = useCart();
+  const { cart, clearCart } = useCart();
   const [shipping, setShipping] = useState({
     name: "", email: "", phone: "", address: "", city: "", postalCode: ""
   });
@@ -17,13 +19,23 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!shipping.name || !shipping.phone || !shipping.address) {
-      alert("Please fill all required shipping details");
+      toast.error("Please fill all required shipping details");
       return;
     }
 
     const orderData = {
       customer: shipping,
-      items: cart,
+      items: cart.map(item => ({
+        product: item.productId,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.colorName,
+        image: item.image.startsWith("http") 
+          ? item.image 
+          : `${window.location.origin}${item.image}`
+      })),
       subtotal,
       deliveryCharge,
       total,
@@ -39,28 +51,31 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (data.success) {
-        alert("✅ Order placed successfully!");
-        setOrderPlaced(true);
+        setOrderPlaced(true); // ✅ set order placed
+        clearCart();          // ✅ clear cart
+        toast.success("Order placed successfully! ✅");
       } else {
-        alert("❌ " + data.error);
+        toast.error(data.error);
       }
     } catch (err) {
-      alert("Something went wrong");
+      toast.error("Something went wrong");
       console.error(err);
     }
   };
-
-  if (!cart || cart.length === 0) return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-      <h2 className="text-2xl font-semibold text-gray-700">Your cart is empty 🛒</h2>
-      <p className="text-gray-500 mt-2">Add some products to start shopping</p>
-    </div>
-  );
 
   if (orderPlaced) return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
       <h2 className="text-3xl font-bold text-green-600 mb-3">✅ Order Placed!</h2>
       <p className="text-gray-700 text-lg">Cash on Delivery (COD)</p>
+      <ToastContainer position="top-right" autoClose={4000} />
+    </div>
+  );
+
+  if (!cart || cart.length === 0) return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <h2 className="text-2xl font-semibold text-gray-700">Your cart is empty 🛒</h2>
+      <p className="text-gray-500 mt-2">Add some products to start shopping</p>
+      <ToastContainer position="top-right" autoClose={4000} />
     </div>
   );
 
@@ -79,6 +94,19 @@ export default function CheckoutPage() {
           handlePlaceOrder={handlePlaceOrder}
         />
       </div>
+
+      {/* Toast container for notifications */}
+     <ToastContainer
+  position="top-right"            // top-right corner
+  autoClose={4000}               // auto hide after 4s
+  hideProgressBar={false}        // show progress bar
+  newestOnTop={true}             // latest toast on top
+  closeOnClick                   // close on click
+  pauseOnFocusLoss               // pause when window loses focus
+  draggable                      // draggable
+  pauseOnHover                   // pause on hover
+  theme="colored"                // colorful toast
+/>
     </div>
   );
 }

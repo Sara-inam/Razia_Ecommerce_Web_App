@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link"; 
 
-export default function SignUpForm({ show = false, onClose }) {
+export default function SignUpForm({ show = false, onClose, switchForm }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -172,10 +173,15 @@ export default function SignUpForm({ show = false, onClose }) {
           </button>
         )}
 
-        <p className="text-white/70 text-sm text-center mt-5">
-          Already have an account?{" "}
-          <span className="text-green-500 cursor-pointer">Login</span>
-        </p>
+       <p className="text-white/70 text-sm text-center mt-5">
+  Already have an account?{" "}
+  <span
+    className="text-green-500 cursor-pointer"
+    onClick={switchForm} // use prop from AuthPage
+  >
+    Login
+  </span>
+</p>
       </div>
     </div>
   );

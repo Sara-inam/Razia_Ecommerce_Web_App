@@ -1,54 +1,62 @@
 "use client";
-
 import "./styles/globals.css";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import LoginForm from "@/components/LoginForm";
-import SignUpForm from "@/components/SignUpForm";
+import AuthPage from "@/app/auth/page"; // Unified Auth modal
+import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 
+// ✅ Create a QueryClient instance outside the component
+const queryClient = new QueryClient();
+
 export default function RootLayout({ children }) {
-  const [queryClient] = useState(() => new QueryClient());
+  // Unified auth modal state
+  const [showAuth, setShowAuth] = useState(false);
+  const [authForm, setAuthForm] = useState("signup"); // "signup" | "login"
 
-  const [showLogin, setShowLogin] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
   const pathname = usePathname();
-
   const isAdmin = pathname.startsWith("/admin");
 
   return (
     <html lang="en">
       <body className="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
         <QueryClientProvider client={queryClient}>
-          <CartProvider>
-            {!isAdmin && (
-              <Header
-                onLoginClick={() => setShowLogin(true)}
-                onSignUpClick={() => setShowSignUp(true)}
-              />
-            )}
+          <AuthProvider>
+            <CartProvider>
+              {/* Header */}
+              {!isAdmin && (
+                <Header
+                  onLoginClick={() => {
+                    setAuthForm("login");
+                    setShowAuth(true);
+                  }}
+                  onSignUpClick={() => {
+                    setAuthForm("signup");
+                    setShowAuth(true);
+                  }}
+                />
+              )}
 
-            <main className="flex-1 pt-17 relative">{children}</main>
+              {/* Main content */}
+              <main className="flex-1 pt-17 relative">{children}</main>
 
-            {!isAdmin && <Footer />}
+              {/* Footer */}
+              {!isAdmin && <Footer />}
 
-            <LoginForm
-              show={showLogin}
-              onClose={() => setShowLogin(false)}
-            />
+              {/* Unified Auth Modal */}
+              {showAuth && (
+                <AuthPage
+                  initialForm={authForm}
+                  onClose={() => setShowAuth(false)}
+                />
+              )}
+            </CartProvider>
+          </AuthProvider>
 
-            <SignUpForm
-              show={showSignUp}
-              onClose={() => setShowSignUp(false)}
-            />
-          </CartProvider>
-
-          {/* Devtools only in development */}
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </body>
