@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import {
   FaShoppingCart,
@@ -186,11 +187,17 @@ export default function Header({ onLoginClick, onSignUpClick }) {
     return acc;
   }, {});
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!search) return;
-    window.location.href = `/search?q=${search}`;
-  };
+
+
+const router = useRouter();
+
+const handleSearch = (e) => {
+  e.preventDefault();
+  if (!search.trim()) return;
+
+  router.push(`/search?q=${encodeURIComponent(search)}`);
+  setSearch(""); // optional clean
+};
 
   const toggleMobileCollection = (key) => {
     setMobileCollectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -257,24 +264,42 @@ export default function Header({ onLoginClick, onSignUpClick }) {
           {/* RIGHT SIDE */}
           <div className="flex items-center space-x-3 md:space-x-6 ml-auto">
             {/* SEARCH */}
-            <div className="hidden md:flex items-center relative">
-              <form
-                onSubmit={handleSearch}
-                className={`flex items-center border rounded-lg overflow-hidden bg-white transition-all ${searchOpen ? "w-64" : "w-0 opacity-0 pointer-events-none"
-                  }`}
-              >
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="px-3 py-1.5 outline-none text-sm w-full"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </form>
-              <button onClick={() => setSearchOpen(!searchOpen)}>
-                <FaSearch />
-              </button>
-            </div>
+           {/* SEARCH (DESKTOP IMPROVED) */}
+<div className="hidden md:flex items-center relative">
+  <div
+    className={`flex items-center gap-2 bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-sm transition-all duration-300 focus-within:ring-2 focus-within:ring-green-500 ${
+      searchOpen ? "w-72" : "w-10"
+    }`}
+  >
+    {/* search icon */}
+    <button onClick={() => setSearchOpen(!searchOpen)}>
+      <FaSearch className="text-gray-500 hover:text-green-600 transition" />
+    </button>
+
+    {/* input */}
+    <form onSubmit={handleSearch} className="flex-1">
+      <input
+        type="text"
+        placeholder="Search products..."
+        className={`bg-transparent outline-none text-sm w-full transition-all duration-300 ${
+          searchOpen ? "opacity-100" : "opacity-0 w-0"
+        }`}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </form>
+
+    {/* clear button */}
+    {search && searchOpen && (
+      <button
+        onClick={() => setSearch("")}
+        className="text-gray-400 hover:text-red-500 text-sm"
+      >
+        ✕
+      </button>
+    )}
+  </div>
+</div>
 
             {/* PROFILE */}
             {showProfileIcon ? (
@@ -413,17 +438,37 @@ export default function Header({ onLoginClick, onSignUpClick }) {
         {/* MOBILE MENU */}
         {menuOpen && (
           <div className="md:hidden mt-2 bg-white rounded-lg shadow-lg px-4 py-3 flex flex-col space-y-2">
-            <form onSubmit={handleSearch} className="flex border rounded-lg">
-              <input
-                type="text"
-                className="w-full px-2"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <button>
-                <FaSearch />
-              </button>
-            </form>
+           <form
+  onSubmit={handleSearch}
+  className="flex items-center gap-2 bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-green-500 transition"
+>
+  <FaSearch className="text-gray-400" />
+
+  <input
+    type="text"
+    placeholder="Search products..."
+    className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
+
+  {search && (
+    <button
+      type="button"
+      onClick={() => setSearch("")}
+      className="text-gray-400 hover:text-red-500 text-sm"
+    >
+      ✕
+    </button>
+  )}
+
+  <button
+    type="submit"
+    className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 transition"
+  >
+    Go
+  </button>
+</form>
 
             {navItems.filter((i) => i !== "Categories").map((item) => (
               <Link

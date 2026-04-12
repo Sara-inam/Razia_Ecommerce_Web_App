@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
   profileImage: { type: String },
   role: { type: String, enum: ["user", "admin"], default: "user" },
    refreshToken: { type: String }, // ✅ Add this field
+   resetOtp: String,
+  resetOtpExpire: Date,
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model("User", userSchema);

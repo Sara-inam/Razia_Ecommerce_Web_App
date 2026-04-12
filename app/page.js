@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import HomeSection from "@/components/HomeSection";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
@@ -134,9 +135,11 @@ export default function Home() {
                 {slides[current]?.desc}
               </p>
 
-              <button className="px-6 sm:px-8 py-2 sm:py-3 bg-green-600 rounded-full hover:bg-green-700 transition">
-                Shop Now
-              </button>
+             <Link href="/shop">
+  <button className="px-6 py-3 bg-green-600 rounded-full hover:bg-green-700">
+    Shop
+  </button>
+</Link>
             </div>
           )}
 

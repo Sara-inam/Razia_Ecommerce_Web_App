@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-export default function LoginForm({ show = false, onClose, switchForm }) {
+export default function LoginForm({ show = false, onClose, switchForm, openForgot }) {
   const router = useRouter();
   const pathname = usePathname();
   const { login } = useAuth();
@@ -153,6 +153,13 @@ export default function LoginForm({ show = false, onClose, switchForm }) {
             Sign Up
           </span>
         </p>
+        <button
+  type="button"
+  onClick={openForgot}
+  className="text-sm text-blue-600 underline mt-2"
+>
+  Forgot Password?
+</button>
       </div>
     </div>
   );
