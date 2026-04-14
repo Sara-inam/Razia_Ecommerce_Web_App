@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FaHome, FaBox, FaUser, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
+import {
+  FaHome,
+  FaBoxOpen,
+  FaUsers,
+  FaSignOutAlt,
+  FaBars,
+  FaTimes,
+  FaLayerGroup,
+  FaTags,
+  FaShoppingCart,
+  FaBell,
+  FaEnvelope,
+  FaImages
+} from "react-icons/fa";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext"; // ✅ import AuthContext
@@ -36,16 +49,16 @@ export default function Sidebar() {
   const queryClient = useQueryClient();
 
   const navItems = [
-    { name: "Dashboard", icon: <FaHome />, link: "/admin" },
-    { name: "Collections", icon: <FaBox />, link: "/admin/collections" },
-    { name: "Brands", icon: <FaBox />, link: "/admin/brands" },
-    { name: "Products", icon: <FaBox />, link: "/admin/products" },
-    { name: "Orders", icon: <FaBox />, link: "/admin/orders" },
-    { name: "Users", icon: <FaUser />, link: "/admin/users" },
-     { name: "Notifications", icon: <FaUser />, link: "/admin/notifications" },
-      { name: "Contact Messages", icon: <FaUser />, link: "/admin/messages" },
-      { name: "Home Slider", icon: <FaUser />, link: "/admin/slider" },
-  ];
+  { name: "Dashboard", icon: <FaHome />, link: "/admin" },
+  { name: "Collections", icon: <FaLayerGroup />, link: "/admin/collections" },
+  { name: "Brands", icon: <FaTags />, link: "/admin/brands" },
+  { name: "Products", icon: <FaBoxOpen />, link: "/admin/products" },
+  { name: "Orders", icon: <FaShoppingCart />, link: "/admin/orders" },
+  { name: "Users", icon: <FaUsers />, link: "/admin/users" },
+  { name: "Notifications", icon: <FaBell />, link: "/admin/notifications" },
+  { name: "Contact Messages", icon: <FaEnvelope />, link: "/admin/messages" },
+  { name: "Home Slider", icon: <FaImages />, link: "/admin/slider" },
+];
 
   // Fetch admin info
   const { data, isLoading, refetch } = useQuery({
