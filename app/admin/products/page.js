@@ -106,6 +106,21 @@ export default function ProductsPage() {
 
       {/* FILTERS */}
       <div className="bg-white p-4 rounded-xl shadow mb-6 flex flex-wrap gap-3">
+          {/* COLLECTION */}
+        <select
+          value={collection}
+          onChange={(e) => {
+            setCollection(e.target.value);
+            setSubCategory("");
+            setPage(1);
+          }}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">All Collections</option>
+          {collections.map((c, i) => (
+            <option key={i} value={c}>{c}</option>
+          ))}
+        </select>
 
         {/* CATEGORY */}
         <select
@@ -124,21 +139,7 @@ export default function ProductsPage() {
           ))}
         </select>
 
-        {/* COLLECTION */}
-        <select
-          value={collection}
-          onChange={(e) => {
-            setCollection(e.target.value);
-            setSubCategory("");
-            setPage(1);
-          }}
-          className="border px-3 py-2 rounded"
-        >
-          <option value="">All Collections</option>
-          {collections.map((c, i) => (
-            <option key={i} value={c}>{c}</option>
-          ))}
-        </select>
+      
 
         {/* SUBCATEGORY */}
         <select
