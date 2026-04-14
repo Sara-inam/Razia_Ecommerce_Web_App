@@ -346,7 +346,7 @@ const handleSearch = (e) => {
                   onClick={onSignUpClick}
                   className="hidden md:block px-3 py-1 bg-green-600 text-white rounded-md"
                 >
-                  SignUp
+                  SignIn
                 </button>
               </>
             )}
@@ -539,7 +539,7 @@ const handleSearch = (e) => {
                   onClick={onSignUpClick}
                   className="px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition"
                 >
-                  SignUp
+                  SignIn
                 </button>
               </div>
             ) : (

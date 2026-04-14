@@ -50,34 +50,62 @@ export default function HomeSection({ section }) {
     <>
       <section className="px-3 sm:px-4 md:px-6 py-5 md:py-7 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
 
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-2 sm:gap-0">
-          <div className="flex items-center gap-3">
-            {image && (
-              <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex-shrink-0">
-                <Image
-                  src={image}
-                  alt={title}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            )}
-            <div>
-              <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-gray-900 leading-tight">
-                {title}
-              </h2>
-              <div className="h-[2px] w-12 bg-emerald-500 mt-1 rounded-full"></div>
-            </div>
-          </div>
-          <button
-            onClick={handleViewAll}
-            className="px-3 py-1 text-xs sm:text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors self-start sm:self-auto"
-          >
-            View all
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5 md:mb-7">
+
+  {/* LEFT SIDE */}
+  <div className="flex flex-col gap-2">
+
+    {/* BADGES */}
+    <div className="flex flex-wrap items-center gap-2">
+
+      {collection && (
+        <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+          {collection}
+        </span>
+      )}
+
+      {category && (
+        <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+          {category}
+        </span>
+      )}
+
+      {subCategory && (
+        <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+          {subCategory}
+        </span>
+      )}
+
+    </div>
+
+    {/* TITLE */}
+    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+      {title}
+    </h2>
+
+    {/* ACCENT LINE */}
+    <div className="w-14 h-[3px] bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
+
+  </div>
+
+  {/* RIGHT SIDE BUTTON (PROPER ALIGNMENT) */}
+  <div className="sm:ml-auto flex sm:justify-end">
+
+    <button
+      onClick={handleViewAll}
+      className="px-5 py-2.5 text-sm font-semibold text-white 
+      bg-gradient-to-r from-emerald-600 to-emerald-700 
+      hover:from-emerald-700 hover:to-emerald-800
+      active:scale-95 hover:scale-105
+      transition-all duration-300 
+      rounded-xl shadow-md whitespace-nowrap"
+    >
+      View All →
+    </button>
+
+  </div>
+
+</div>
 
         {/* GRID */}
         {isLoading ? (

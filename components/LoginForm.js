@@ -150,7 +150,7 @@ export default function LoginForm({ show = false, onClose, switchForm, openForgo
             className="text-green-500 cursor-pointer"
             onClick={switchForm}
           >
-            Sign Up
+            Sign In
           </span>
         </p>
         <button
