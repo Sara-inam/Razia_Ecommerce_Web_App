@@ -3,10 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import HomeSection from "@/components/HomeSection";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 
-/* ================= API FUNCTIONS ================= */
+/* ================= API ================= */
 const fetchSlider = async () => {
   const res = await fetch("/api/slider");
   if (!res.ok) throw new Error("Error fetching slider");
@@ -20,8 +20,7 @@ const fetchSections = async () => {
 };
 
 export default function Home() {
-
-  /* ================= TANSTACK: SLIDER ================= */
+  /* ================= SLIDER QUERY ================= */
   const {
     data: sliderData,
     isLoading: sliderLoading,
@@ -32,13 +31,13 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const slides = sliderData?.slides || [];
+  const slides = useMemo(() => sliderData?.slides || [], [sliderData]);
 
   const [current, setCurrent] = useState(0);
 
-  /* reset slider index */
+  /* reset index safely */
   useEffect(() => {
-    setCurrent(0);
+    if (slides.length > 0) setCurrent(0);
   }, [slides.length]);
 
   /* auto slider */
@@ -47,7 +46,7 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
-    }, 4000);
+    }, 3500);
 
     return () => clearInterval(interval);
   }, [slides.length]);
@@ -55,15 +54,15 @@ export default function Home() {
   /* navigation */
   const prevSlide = () => {
     if (!slides.length) return;
-    setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+    setCurrent((p) => (p - 1 + slides.length) % slides.length);
   };
 
   const nextSlide = () => {
     if (!slides.length) return;
-    setCurrent((prev) => (prev + 1) % slides.length);
+    setCurrent((p) => (p + 1) % slides.length);
   };
 
-  /* ================= TANSTACK: SECTIONS ================= */
+  /* ================= SECTIONS ================= */
   const {
     data: sectionsData,
     isLoading: sectionLoading,
@@ -79,34 +78,35 @@ export default function Home() {
 
       {/* ================= SLIDER ================= */}
       <div className="w-full flex justify-center px-3">
-        <div className="relative w-full max-w-7xl h-[55vh] sm:h-[65vh] md:h-[70vh] rounded-2xl overflow-hidden shadow-2xl bg-black">
+        <div className="relative w-full max-w-7xl h-[55vh] sm:h-[65vh] md:h-[70vh] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-gray-900 via-black to-gray-900">
 
-          {/* LOADING */}
+          {/* ================= LOADING SKELETON ================= */}
           {sliderLoading && (
-            <div className="flex items-center justify-center h-full text-white">
-              Loading Slider...
+            <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 bg-gray-900 animate-pulse">
+              <div className="w-32 h-4 bg-gray-700 rounded"></div>
+              <div className="w-48 h-3 bg-gray-700 rounded"></div>
             </div>
           )}
 
-          {/* ERROR */}
+          {/* ================= ERROR ================= */}
           {sliderError && (
             <div className="flex items-center justify-center h-full text-red-400">
               Failed to load slider
             </div>
           )}
 
-          {/* EMPTY */}
+          {/* ================= EMPTY ================= */}
           {!sliderLoading && slides.length === 0 && (
             <div className="flex items-center justify-center h-full text-white">
               No Slider Images Found
             </div>
           )}
 
-          {/* SLIDES */}
+          {/* ================= SLIDES ================= */}
           {slides.map((slide, index) => (
             <div
               key={index}
-              className={`absolute inset-0 transition-opacity duration-700 ${
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
                 index === current ? "opacity-100 z-10" : "opacity-0 z-0"
               }`}
             >
@@ -114,20 +114,22 @@ export default function Home() {
                 src={slide.img}
                 alt={slide.title || "slider"}
                 fill
+                priority={index === 0}   // ⚡ FIRST IMAGE FAST LOAD
+                sizes="100vw"
                 className="object-cover"
               />
             </div>
           ))}
 
-          {/* OVERLAY */}
+          {/* ================= OVERLAY ================= */}
           {slides.length > 0 && (
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/20"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/20" />
           )}
 
-          {/* CONTENT */}
+          {/* ================= CONTENT ================= */}
           {slides.length > 0 && (
-            <div className="relative z-20 flex flex-col items-center justify-center h-full text-white text-center px-4 sm:px-6">
-              <h1 className="text-xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4">
+            <div className="relative z-20 flex flex-col items-center justify-center h-full text-white text-center px-4">
+              <h1 className="text-xl sm:text-3xl md:text-5xl font-bold mb-3">
                 {slides[current]?.title}
               </h1>
 
@@ -135,44 +137,46 @@ export default function Home() {
                 {slides[current]?.desc}
               </p>
 
-             <Link href="/shop">
-  <button className="px-6 py-3 bg-green-600 rounded-full hover:bg-green-700">
-    Shop
-  </button>
-</Link>
+              <Link href="/shop">
+                <button className="px-6 py-3 bg-green-600 rounded-full hover:bg-green-700 transition">
+                  Shop Now
+                </button>
+              </Link>
             </div>
           )}
 
-          {/* ARROWS */}
+          {/* ================= ARROWS ================= */}
           {slides.length > 1 && (
             <>
               <button
                 onClick={prevSlide}
-                className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 bg-white/25 text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white w-11 h-11 rounded-full transition"
               >
                 &#8249;
               </button>
 
               <button
                 onClick={nextSlide}
-                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 bg-white/25 text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white w-11 h-11 rounded-full transition"
               >
                 &#8250;
               </button>
             </>
           )}
 
-          {/* DOTS */}
+          {/* ================= DOTS ================= */}
           {slides.length > 1 && (
-            <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-3">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
               {slides.map((_, idx) => (
                 <span
                   key={idx}
                   onClick={() => setCurrent(idx)}
-                  className={`h-2 rounded-full cursor-pointer transition-all ${
-                    idx === current ? "w-6 sm:w-8 bg-green-500" : "w-2 sm:w-3 bg-white/60"
+                  className={`cursor-pointer rounded-full transition-all ${
+                    idx === current
+                      ? "w-7 h-2 bg-green-500"
+                      : "w-2 h-2 bg-white/50"
                   }`}
-                ></span>
+                />
               ))}
             </div>
           )}
@@ -191,7 +195,6 @@ export default function Home() {
       {sectionsData?.sections?.map((section, index) => (
         <HomeSection key={section._id || index} section={section} />
       ))}
-
     </div>
   );
 }

@@ -68,7 +68,7 @@ for (const item of body.items) {
     const availableQty = stockItem?.quantity || 0;
 
     throw new Error(
-      `❌ ${item.name} is out of stock. Available quantity: ${availableQty}`
+      ` ${item.name} is out of stock. Available quantity: ${availableQty}`
     );
   }
 }

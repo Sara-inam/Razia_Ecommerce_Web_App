@@ -6,9 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import AuthPage from "@/app/auth/page"; // Unified Auth modal
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
+
 
 // ✅ Create a QueryClient instance outside the component
 const queryClient = new QueryClient();
@@ -43,6 +45,7 @@ export default function RootLayout({ children }) {
 
               {/* Main content */}
               <main className="flex-1 pt-17 relative">{children}</main>
+                <WhatsAppButton />
 
               {/* Footer */}
               {!isAdmin && <Footer />}

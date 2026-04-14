@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
@@ -7,14 +8,18 @@ export default function MessagesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Fetch messages
+  const [page, setPage] = useState(1);
+  const limit = 15;
+
+  // Fetch messages with pagination
   const { data, isLoading, error } = useQuery({
-    queryKey: ["messages"],
+    queryKey: ["messages", page],
     queryFn: async () => {
-      const res = await fetch("/api/admin/messages");
+      const res = await fetch(`/api/admin/messages?page=${page}&limit=${limit}`);
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },
+    keepPreviousData: true,
   });
 
   // Mutation to mark message as seen
@@ -35,8 +40,12 @@ export default function MessagesPage() {
 
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Loading messages...</div>;
+
   if (error)
     return <div className="p-6 text-center text-red-500">Error loading messages</div>;
+
+  const messages = data?.messages || [];
+  const totalPages = data?.totalPages || 1;
 
   return (
     <div className="p-6">
@@ -58,9 +67,9 @@ export default function MessagesPage() {
             </thead>
 
             <tbody className="divide-y">
-              {data.map((msg, index) => (
+              {messages.map((msg, index) => (
                 <tr key={msg._id} className="hover:bg-gray-50 transition duration-200">
-                  <td className="px-6 py-4">{index + 1}</td>
+                  <td className="px-6 py-4">{(page - 1) * limit + index + 1}</td>
                   <td className="px-6 py-4 font-semibold">{msg.name}</td>
                   <td className="px-6 py-4 text-gray-600">{msg.email}</td>
                   <td className="px-6 py-4 max-w-xs truncate">{msg.message}</td>
@@ -92,11 +101,33 @@ export default function MessagesPage() {
             </tbody>
           </table>
         </div>
-        
 
-        {data.length === 0 && (
+        {messages.length === 0 && (
           <div className="p-6 text-center text-gray-500">No messages found</div>
         )}
+      </div>
+
+      {/* PAGINATION */}
+      <div className="flex justify-center items-center gap-3 mt-6 flex-wrap">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+
+        <span className="px-4 py-2 bg-gray-100 rounded font-medium">
+          {page} / {totalPages}
+        </span>
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   );

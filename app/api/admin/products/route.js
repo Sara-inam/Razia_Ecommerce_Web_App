@@ -5,6 +5,105 @@ import cloudinary from "@/lib/cloudinary";
 import { requireAdmin } from "@/middleware/admin"; // Admin middleware
 
 // ✅ GET PRODUCTS WITH PAGINATION
+// export async function GET(req) {
+//   await connectDB();
+
+//   const adminCheck = await requireAdmin(req);
+//   if (adminCheck instanceof NextResponse) return adminCheck;
+
+//   try {
+//     const { searchParams } = new URL(req.url);
+//     const page = parseInt(searchParams.get("page")) || 1;
+//     const limit = parseInt(searchParams.get("limit")) || 10;
+//     const skip = (page - 1) * limit;
+
+//     const totalProducts = await Product.countDocuments();
+
+//     const products = await Product.find()
+//       .populate({
+//         path: "brand",
+//         populate: { path: "collection", model: "Collection" },
+//       })
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit)
+//       .lean(); // plain JS objects
+
+//     const totalPages = Math.ceil(totalProducts / limit);
+
+//     return NextResponse.json({
+//       items: products,
+//       totalPages,
+//       totalItems: totalProducts,
+//       currentPage: page,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     return NextResponse.json({ message: "Failed to fetch products" }, { status: 500 });
+//   }
+// }
+// export async function GET(req) {
+//   await connectDB();
+
+//   const adminCheck = await requireAdmin(req);
+//   if (adminCheck instanceof NextResponse) return adminCheck;
+
+//   try {
+//     const { searchParams } = new URL(req.url);
+
+//     const page = parseInt(searchParams.get("page")) || 1;
+//     const limit = parseInt(searchParams.get("limit")) || 10;
+//     const skip = (page - 1) * limit;
+
+//     // ✅ FILTER PARAMS
+//     const category = searchParams.get("category");
+//     const sub_category = searchParams.get("sub_category");
+//     const collection = searchParams.get("collection");
+
+//     // ✅ QUERY
+//     const products = await Product.find()
+//       .populate({
+//         path: "brand",
+//         populate: {
+//           path: "collection",
+//           model: "Collection",
+//           match: {
+//             ...(category && { category }),
+//             ...(sub_category && { sub_category }),
+//             ...(collection && { collection_name: collection }), // ✅ FIXED
+//           },
+//         },
+//       })
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     // ✅ REMOVE UNMATCHED
+//     const filteredProducts = products.filter(
+//       (p) => p.brand?.collection
+//     );
+
+//     const totalProducts = filteredProducts.length;
+
+//     // ✅ PAGINATION (AFTER FILTER)
+//     const paginatedProducts = filteredProducts.slice(skip, skip + limit);
+
+//     const totalPages = Math.ceil(totalProducts / limit);
+
+//     return NextResponse.json({
+//       items: paginatedProducts,
+//       totalPages,
+//       totalItems: totalProducts,
+//       currentPage: page,
+//     });
+
+//   } catch (err) {
+//     console.error(err);
+//     return NextResponse.json(
+//       { message: "Failed to fetch products" },
+//       { status: 500 }
+//     );
+//   }
+// }
 export async function GET(req) {
   await connectDB();
 
@@ -13,36 +112,74 @@ export async function GET(req) {
 
   try {
     const { searchParams } = new URL(req.url);
+
     const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 10;
+    const limit = parseInt(searchParams.get("limit")) || 15;
     const skip = (page - 1) * limit;
 
-    const totalProducts = await Product.countDocuments();
+    // ================= FILTERS =================
+    const category = searchParams.get("category");
+    const sub_category = searchParams.get("sub_category");
+    const collection = searchParams.get("collection");
+    const brand = searchParams.get("brand");
 
-    const products = await Product.find()
+    // ================= QUERY =================
+    let products = await Product.find()
       .populate({
         path: "brand",
-        populate: { path: "collection", model: "Collection" },
+        populate: {
+          path: "collection",
+          model: "Collection",
+        },
       })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(); // plain JS objects
+      .lean();
 
-    const totalPages = Math.ceil(totalProducts / limit);
+    // ================= SAFE FILTERING =================
+
+    if (category) {
+      products = products.filter(
+        p => p.brand?.collection?.category === category
+      );
+    }
+
+    if (sub_category) {
+      products = products.filter(
+        p => p.brand?.collection?.sub_category === sub_category
+      );
+    }
+
+    if (collection) {
+      products = products.filter(
+        p => p.brand?.collection?.collection_name === collection
+      );
+    }
+
+    if (brand) {
+      products = products.filter(
+        p => p.brand?.brand_name === brand
+      );
+    }
+
+    // ================= PAGINATION =================
+    const totalProducts = products.length;
+    const paginatedProducts = products.slice(skip, skip + limit);
 
     return NextResponse.json({
-      items: products,
-      totalPages,
+      items: paginatedProducts,
+      totalPages: Math.ceil(totalProducts / limit),
       totalItems: totalProducts,
       currentPage: page,
     });
+
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ message: "Failed to fetch products" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to fetch products" },
+      { status: 500 }
+    );
   }
 }
-
 // ✅ CREATE PRODUCT
 export async function POST(req) {
   await connectDB();

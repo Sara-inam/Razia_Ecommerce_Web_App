@@ -1,4 +1,5 @@
 "use client";
+
 import { FaWhatsapp, FaInstagram, FaLinkedin } from "react-icons/fa";
 import Link from "next/link";
 
@@ -6,102 +7,93 @@ export default function Footer() {
   return (
     <footer className="relative bg-gradient-to-r from-green-200 via-green-300 to-green-200 text-white mt-12">
 
-      {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-6 py-12 backdrop-blur-xl bg-green-900/30 rounded-3xl shadow-xl grid md:grid-cols-3 gap-8 animate-fadeIn">
+      {/* MAIN FOOTER */}
+      <div className="max-w-7xl mx-auto px-6 py-14 backdrop-blur-xl bg-green-900/30 rounded-3xl shadow-2xl grid grid-cols-1 md:grid-cols-3 gap-10">
 
-        {/* Brand & Description */}
-        <div className="space-y-3">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-wider">My Store</h2>
-          <p className="text-sm md:text-base text-green-100">
-            Premium ecommerce store delivering high-quality products with fast shipping and excellent customer service. Your satisfaction is our priority!
+        {/* BRAND */}
+        <div className="space-y-4 text-center md:text-left">
+          <h2 className="text-3xl font-extrabold tracking-wide">
+            My Store
+          </h2>
+
+          <p className="text-sm md:text-base text-green-100 leading-relaxed">
+            Premium ecommerce store delivering high-quality products with fast shipping
+            and excellent customer service. Your satisfaction is our priority.
           </p>
         </div>
 
-        {/* Quick Links */}
-        <div className="space-y-3 text-green-100">
-          <h3 className="font-semibold text-lg">Quick Links</h3>
-          <ul className="space-y-1">
-            <li>
-              <Link href="/about" className="hover:text-white transition">About Us</Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:text-white transition">Contact</Link>
-            </li>
-            <li>
-              <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
-            </li>
-            <li>
-              <Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link>
-            </li>
-            <li>
-              <Link href="/faq" className="hover:text-white transition">FAQ</Link>
-            </li>
+        {/* QUICK LINKS */}
+        <div className="space-y-4 text-center md:text-left">
+          <h3 className="text-lg font-semibold text-green-100">
+            Quick Links
+          </h3>
+
+          <ul className="space-y-2 text-green-100 text-sm md:text-base">
+            {[
+              { name: "About Us", link: "/about" },
+              { name: "Contact", link: "/contact" },
+              { name: "Privacy Policy", link: "/privacy" },
+              { name: "Terms & Conditions", link: "/terms" },
+              { name: "FAQ", link: "/faq" },
+            ].map((item, i) => (
+              <li key={i}>
+                <Link
+                  href={item.link}
+                  className="hover:text-white hover:translate-x-1 transition-all duration-300 inline-block"
+                >
+                  → {item.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* Social + Newsletter */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg text-green-100">Connect with Us</h3>
-          <div className="flex gap-4">
+        {/* SOCIAL */}
+        <div className="space-y-5 text-center md:text-left">
+
+          <h3 className="text-lg font-semibold text-green-100">
+            Connect With Us
+          </h3>
+
+          <div className="flex justify-center md:justify-start gap-4">
+
             <a
               href="https://wa.me/923001234567"
               target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/30 p-3 rounded-full hover:bg-green-600 hover:scale-110 transition transform shadow-md"
+              className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-green-600 hover:scale-110 transition shadow-lg"
             >
-              <FaWhatsapp />
+              <FaWhatsapp size={20} />
             </a>
+
             <a
               href="https://instagram.com"
               target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/30 p-3 rounded-full hover:bg-pink-500 hover:scale-110 transition transform shadow-md"
+              className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-pink-500 hover:scale-110 transition shadow-lg"
             >
-              <FaInstagram />
+              <FaInstagram size={20} />
             </a>
+
             <a
               href="https://linkedin.com"
               target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/30 p-3 rounded-full hover:bg-blue-600 hover:scale-110 transition transform shadow-md"
+              className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-blue-600 hover:scale-110 transition shadow-lg"
             >
-              <FaLinkedin />
+              <FaLinkedin size={20} />
             </a>
+
           </div>
 
-          {/* Newsletter */}
-          <div className="mt-4">
-            <h4 className="text-green-100 font-medium mb-2">Subscribe to our newsletter</h4>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full px-3 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-              />
-              <button className="px-4 py-2 bg-green-600 rounded-lg font-semibold hover:bg-green-700 transition">Subscribe</button>
-            </div>
-          </div>
+          <p className="text-sm text-green-100">
+            Follow us for latest updates & offers 
+          </p>
         </div>
       </div>
 
-      {/* Sub-Footer */}
-      <div className="text-center text-green-100 text-sm py-4 animate-fadeIn delay-150">
-        Made with ❤️ for our customers. Powered by My Store Team.
+      {/* BOTTOM BAR */}
+      <div className="text-center text-green-100 text-sm py-5 border-t border-white/20 mt-6">
+        © {new Date().getFullYear()} My Store. All rights reserved.
       </div>
 
-      {/* Animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-out forwards;
-        }
-        .delay-150 {
-          animation-delay: 0.15s;
-        }
-      `}</style>
     </footer>
   );
 }

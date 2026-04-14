@@ -12,6 +12,14 @@ export default function AdminSlider() {
     { img: "", title: "", desc: "" },
   ]);
 
+  // TOAST
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   /* ================= GET SLIDER ================= */
   const { data, isSuccess } = useQuery({
     queryKey: ["slider"],
@@ -36,29 +44,42 @@ export default function AdminSlider() {
         body: JSON.stringify({ slides }),
       });
 
+      if (!res.ok) throw new Error("Failed");
+
       return res.json();
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["slider"] });
-      alert("Slider Updated 🚀");
+      showToast("Slider Updated Successfully 🚀", "success");
+    },
+
+    onError: () => {
+      showToast("Something went wrong!", "error");
     },
   });
 
   /* ================= IMAGE UPLOAD ================= */
   const uploadImage = async (file, index) => {
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    const updated = [...slides];
-    updated[index].img = data.url;
-    setSlides(updated);
+      const updated = [...slides];
+      updated[index].img = data.url;
+      setSlides(updated);
+
+      showToast("Image uploaded ✅");
+    } catch (err) {
+      showToast("Image upload failed!", "error");
+    }
   };
 
   const handleChange = (index, key, value) => {
@@ -68,26 +89,39 @@ export default function AdminSlider() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 md:p-6">
+
+      {/* TOAST */}
+      {toast && (
+        <div
+          className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-xl text-white shadow-lg ${
+            toast.type === "error" ? "bg-red-500" : "bg-green-500"
+          }`}
+        >
+          {toast.msg}
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">🎯 Slider Management</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          🎯 Slider Management
+        </h1>
+        <p className="text-gray-500 text-sm md:text-base">
           Upload and manage homepage slider content
         </p>
       </div>
 
-      {/* SLIDER CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {slides.map((slide, index) => (
           <div
             key={index}
-            className="bg-white/80 backdrop-blur-lg shadow-xl rounded-2xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300"
+            className="bg-white/80 backdrop-blur-lg shadow-xl rounded-2xl border border-gray-100 overflow-hidden hover:shadow-2xl transition"
           >
 
-            {/* IMAGE UPLOAD AREA */}
+            {/* UPLOAD */}
             <div className="p-4 border-b bg-gray-50">
               <label className="block text-sm font-medium text-gray-600 mb-2">
                 Upload Image
@@ -96,14 +130,16 @@ export default function AdminSlider() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => uploadImage(e.target.files[0], index)}
+                onChange={(e) =>
+                  uploadImage(e.target.files[0], index)
+                }
                 className="w-full text-sm file:mr-4 file:py-2 file:px-4
                 file:rounded-lg file:border-0 file:bg-green-600 file:text-white
                 hover:file:bg-green-700 cursor-pointer"
               />
             </div>
 
-            {/* IMAGE PREVIEW */}
+            {/* IMAGE */}
             {slide.img && (
               <img
                 src={slide.img}
@@ -112,7 +148,7 @@ export default function AdminSlider() {
               />
             )}
 
-            {/* FORM FIELDS */}
+            {/* FORM */}
             <div className="p-4 space-y-3">
 
               <input
@@ -132,9 +168,7 @@ export default function AdminSlider() {
                   handleChange(index, "desc", e.target.value)
                 }
               />
-
             </div>
-
           </div>
         ))}
       </div>
@@ -143,12 +177,16 @@ export default function AdminSlider() {
       <div className="mt-10 flex justify-center">
         <button
           onClick={() => mutation.mutate(slides)}
-          className="px-10 py-3 bg-gradient-to-r from-green-600 to-emerald-500 text-white font-semibold rounded-full shadow-lg hover:scale-105 transition"
+          disabled={mutation.isPending}
+          className={`px-8 md:px-10 py-3 rounded-full font-semibold shadow-lg transition transform ${
+            mutation.isPending
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-green-600 to-emerald-500 hover:scale-105 text-white"
+          }`}
         >
-          Save Slider 🚀
+          {mutation.isPending ? "Saving..." : "Save Slider 🚀"}
         </button>
       </div>
-
     </div>
   );
 }

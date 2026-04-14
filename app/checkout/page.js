@@ -51,9 +51,9 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (data.success) {
-        setOrderPlaced(true); // ✅ set order placed
-        clearCart();          // ✅ clear cart
-        toast.success("Order placed successfully! ✅");
+        setOrderPlaced(true); // set order placed
+        clearCart();          // clear cart
+        toast.success("Order placed successfully! ");
       } else {
         toast.error(data.error);
       }
@@ -65,7 +65,7 @@ export default function CheckoutPage() {
 
   if (orderPlaced) return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-      <h2 className="text-3xl font-bold text-green-600 mb-3">✅ Order Placed!</h2>
+      <h2 className="text-3xl font-bold text-green-600 mb-3"> Order Placed!</h2>
       <p className="text-gray-700 text-lg">Cash on Delivery (COD)</p>
       <ToastContainer position="top-right" autoClose={4000} />
     </div>
