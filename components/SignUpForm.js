@@ -160,7 +160,7 @@ export default function SignUpForm({ show = false, onClose, switchForm }) {
             disabled={loading}
             className="w-full py-3 bg-green-600 rounded-xl text-white font-semibold hover:bg-green-700 transition"
           >
-            {loading ? "Creating account..." : "Sign Up"}
+            {loading ? "Creating account..." : "Sign In"}
           </button>
         </form>
 
