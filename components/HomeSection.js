@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import ProductModal from "@/components/ProductModal";
 
@@ -12,33 +10,45 @@ const makeSlug = (text = "") =>
 
 export default function HomeSection({ section }) {
   const router = useRouter();
-  const { title, collection, category, subCategory, image, products: initialProducts } = section;
 
-  const { data: productsData = initialProducts, isLoading } = useQuery({
-    queryKey: ["sectionProducts", collection, category, subCategory],
-    queryFn: async () => initialProducts || [],
-    staleTime: 1000 * 60 * 5,
-  });
+  const {
+    title,
+    collection,
+    category,
+    subCategory,
+    products: initialProducts = [],
+  } = section || {};
 
-  if (!productsData?.length) return null;
+  // ✅ Always safe array
+  const productsData = initialProducts || [];
 
-  const displayProducts = productsData.slice(0, 12);
-
-  const [selectedColors, setSelectedColors] = useState(
-    displayProducts.reduce((acc, product) => {
-      acc[product._id] = product.colors?.[0] || null;
-      return acc;
-    }, {})
+  // ⚡ only first 12 products
+  const displayProducts = useMemo(
+    () => productsData.slice(0, 12),
+    [productsData]
   );
+
+  // ✅ FIX: safe initial state (no hydration bug)
+  const [selectedColors, setSelectedColors] = useState(() => {
+    const acc = {};
+    displayProducts.forEach((product) => {
+      acc[product?._id] = product?.colors?.[0] || null;
+    });
+    return acc;
+  });
 
   const [activeProduct, setActiveProduct] = useState(null);
 
   const handleSelectColor = (productId, color) => {
-    setSelectedColors((prev) => ({ ...prev, [productId]: color }));
+    setSelectedColors((prev) => ({
+      ...prev,
+      [productId]: color,
+    }));
   };
 
   const handleViewAll = () => {
     const catSlug = makeSlug(category);
+
     const query = subCategory
       ? `?sub_category=${makeSlug(subCategory)}&collection=${makeSlug(collection)}`
       : `?collection=${makeSlug(collection)}`;
@@ -46,88 +56,81 @@ export default function HomeSection({ section }) {
     router.push(`/products/${catSlug}${query}`);
   };
 
+  // ✅ SAFE RENDER GUARD (fixes Vercel blank section issue)
+  if (!displayProducts.length) return null;
+
   return (
     <>
       <section className="px-3 sm:px-4 md:px-6 py-5 md:py-7 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5 md:mb-7">
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5 md:mb-7">
 
-  {/* LEFT SIDE */}
-  <div className="flex flex-col gap-2">
+          {/* LEFT */}
+          <div className="flex flex-col gap-2">
 
-    {/* BADGES */}
-    <div className="flex flex-wrap items-center gap-2">
+            {/* BADGES */}
+            <div className="flex flex-wrap items-center gap-2">
 
-      {collection && (
-        <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-          {collection}
-        </span>
-      )}
+              {collection && (
+                <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {collection}
+                </span>
+              )}
 
-      {category && (
-        <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-          {category}
-        </span>
-      )}
+              {category && (
+                <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  {category}
+                </span>
+              )}
 
-      {subCategory && (
-        <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-          {subCategory}
-        </span>
-      )}
+              {subCategory && (
+                <span className="px-3 py-1 text-[11px] font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                  {subCategory}
+                </span>
+              )}
 
-    </div>
+            </div>
 
-    {/* TITLE */}
-    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
-      {title}
-    </h2>
+            {/* TITLE */}
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+              {title}
+            </h2>
 
-    {/* ACCENT LINE */}
-    <div className="w-14 h-[3px] bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
+            {/* ACCENT */}
+            <div className="w-14 h-[3px] bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"></div>
+          </div>
 
-  </div>
+          {/* RIGHT BUTTON */}
+          <div className="sm:ml-auto flex sm:justify-end">
+            <button
+              onClick={handleViewAll}
+              className="px-5 py-2.5 text-sm font-semibold text-white 
+              bg-gradient-to-r from-emerald-600 to-emerald-700 
+              hover:from-emerald-700 hover:to-emerald-800
+              active:scale-95 hover:scale-105
+              transition-all duration-300 
+              rounded-xl shadow-md whitespace-nowrap"
+            >
+              View All →
+            </button>
+          </div>
 
-  {/* RIGHT SIDE BUTTON (PROPER ALIGNMENT) */}
-  <div className="sm:ml-auto flex sm:justify-end">
-
-    <button
-      onClick={handleViewAll}
-      className="px-5 py-2.5 text-sm font-semibold text-white 
-      bg-gradient-to-r from-emerald-600 to-emerald-700 
-      hover:from-emerald-700 hover:to-emerald-800
-      active:scale-95 hover:scale-105
-      transition-all duration-300 
-      rounded-xl shadow-md whitespace-nowrap"
-    >
-      View All →
-    </button>
-
-  </div>
-
-</div>
+        </div>
 
         {/* GRID */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-48 bg-gray-100 animate-pulse rounded" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {displayProducts.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                selectedColor={selectedColors[product._id]}
-                onSelectColor={handleSelectColor}
-                onViewDetails={() => setActiveProduct(product)}
-                imageClass="object-contain"
-              />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {displayProducts.map((product) => (
+            <ProductCard
+              key={product._id}
+              product={product}
+              selectedColor={selectedColors[product._id]}
+              onSelectColor={handleSelectColor}
+              onViewDetails={() => setActiveProduct(product)}
+              imageClass="object-contain"
+            />
+          ))}
+        </div>
 
         {/* FOOTER */}
         {displayProducts.length === 12 && (
@@ -137,6 +140,7 @@ export default function HomeSection({ section }) {
             </span>
           </div>
         )}
+
       </section>
 
       {/* MODAL */}
