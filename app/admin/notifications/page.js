@@ -1,6 +1,10 @@
-// app/admin/notifications/page.js
+import { Suspense } from "react";
 import AdminNotifications from "@/components/admin/AdminNotifications";
 
 export default function Page() {
-  return <AdminNotifications />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminNotifications />
+    </Suspense>
+  );
 }
